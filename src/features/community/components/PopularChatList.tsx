@@ -1,53 +1,40 @@
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Users, ArrowRight, Flame } from "lucide-react";
+import { Users, ArrowRight, Flame } from "lucide-react";
 
 // 채팅방 데이터 타입 정의
 interface ChatRoom {
   id: number;
   rank: number;
   category: string; // 풀스택, AI
-  title: string; // 방 제목
+  title: string;    // 방 제목
   lastMessage: string; // 최근 올라온 대화
   activeUsers: number; // 현재 접속자 수
-  bgColor: string; // 배경 포인트 색상
-  rankColor: string; // 순위 뱃지 색상
+  bgColor: string;     // 배경 포인트 색상
+  rankColor: string;   // 순위 뱃지 색상
 }
 
-export default function PopularChatList({
-  chatRooms,
-}: {
-  chatRooms: ChatRoom[];
-}) {
+export default function PopularChatList({ chatRooms }: { chatRooms: ChatRoom[] }) {
   return (
     <div>
       {/* 섹션 제목 */}
       <div className="flex items-center gap-2 mb-4">
         <Flame className="w-5 h-5 text-orange-500 animate-pulse" />
         <h3 className="text-lg font-bold text-gray-800">
-          지금 가장 핫한 채팅방{" "}
-          <span className="text-slate-400 font-normal text-sm ml-1">
-            실시간 소통 중!
-          </span>
+          지금 가장 핫한 채팅방 <span className="text-slate-400 font-normal text-sm ml-1">실시간 소통 중!</span>
         </h3>
       </div>
 
       {/* 카드 3개 그리드 배치 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {chatRooms.map((room) => (
-          <Card
-            key={room.id}
-            className="overflow-hidden hover:shadow-lg transition-all border-gray-200 group h-full flex flex-col hover:-translate-y-1 duration-300"
-          >
+          <Card key={room.id} className="overflow-hidden hover:shadow-lg transition-all border-gray-200 group h-full flex flex-col hover:-translate-y-1 duration-300">
+            
             {/* 상단: 카테고리 & 순위 영역 */}
-            <div
-              className={`h-24 ${room.bgColor} relative p-4 flex flex-col justify-between`}
-            >
+            <div className={`h-24 ${room.bgColor} relative p-4 flex flex-col justify-between`}>
               <div className="flex justify-between items-start">
-                <Badge
-                  className={`${room.rankColor} hover:${room.rankColor} text-white border-none shadow-sm px-2 py-0.5`}
-                >
+                <Badge className={`${room.rankColor} hover:${room.rankColor} text-white border-none shadow-sm px-2 py-0.5`}>
                   {room.rank}위
                 </Badge>
                 <div className="flex items-center gap-1 text-slate-600 bg-white/60 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">

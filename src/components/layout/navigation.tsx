@@ -53,7 +53,7 @@ export default function Navigation() {
                     웹 개발 과정
                   </DropdownMenuLabel>
 
-                  <Link href="/community/1">
+                  <Link href="/community?category=1">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0">
                         <Globe className="w-5 h-5" />
@@ -64,7 +64,7 @@ export default function Navigation() {
 
                   <DropdownMenuSeparator className="my-1" />
 
-                  <Link href="/community/2">
+                  <Link href="/community?category=2">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-purple-100 text-purple-600 rounded-full shrink-0">
                         <Code className="w-5 h-5" />
@@ -75,7 +75,7 @@ export default function Navigation() {
 
                   <DropdownMenuSeparator className="my-1" />
 
-                  <Link href="/community/3">
+                  <Link href="/community?category=3">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-orange-100 text-orange-600 rounded-full shrink-0">
                         <Server className="w-5 h-5" />
@@ -99,7 +99,7 @@ export default function Navigation() {
                     인프라 및 혁신 과정
                   </DropdownMenuLabel>
 
-                  <Link href="/community/4">
+                  <Link href="/community?category=4">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-indigo-100 text-indigo-600 rounded-full shrink-0">
                         <Bot className="w-5 h-5" />
@@ -110,7 +110,7 @@ export default function Navigation() {
 
                   <DropdownMenuSeparator className="my-1" />
 
-                  <Link href="/community/5">
+                  <Link href="/community?category=5">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-slate-200 text-slate-700 rounded-full shrink-0">
                         <ShieldCheck className="w-5 h-5" />
@@ -121,7 +121,7 @@ export default function Navigation() {
 
                   <DropdownMenuSeparator className="my-1" />
 
-                  <Link href="/community/6">
+                  <Link href="/community?category=6">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-orange-100 text-orange-600 rounded-full shrink-0">
                         <Cloud className="w-5 h-5" />
@@ -132,7 +132,7 @@ export default function Navigation() {
 
                   <DropdownMenuSeparator className="my-1" />
 
-                  <Link href="/community/7">
+                  <Link href="/community?category=7">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-lime-100 text-lime-600 rounded-full shrink-0">
                         <Box className="w-5 h-5" />
@@ -157,7 +157,7 @@ export default function Navigation() {
                     기획 및 디자인 과정
                   </DropdownMenuLabel>
 
-                  <Link href="/community/8">
+                  <Link href="/community?category=8">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-pink-100 text-pink-600 rounded-full shrink-0">
                         <Palette className="w-5 h-5" />
@@ -168,7 +168,7 @@ export default function Navigation() {
 
                   <DropdownMenuSeparator className="my-1" />
 
-                  <Link href="/community/9">
+                  <Link href="/community?category=9">
                     <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
                       <div className="p-2 bg-green-100 text-green-600 rounded-full shrink-0">
                         <Lightbulb className="w-5 h-5" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link"; 
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Users, ArrowRight, X, Send } from "lucide-react";
 import PostCard from "@/features/posts/components/PostCard";
 
-// 임시 데이터 (나중에 API 연동 시 제거)
+// 임시 데이터
 const mockPosts = [
   {
     id: 1,
@@ -75,7 +76,8 @@ export function CommunityBoard({ communityName }: CommunityBoardProps) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[minmax(200px,auto)]">
-      {/* 채팅방 카드 */}
+      
+      {/* ---------------- 채팅방 카드 ---------------- */}
       <Card
         className={`
           transition-all duration-300 ease-in-out border-slate-200 flex flex-col group overflow-hidden
@@ -178,10 +180,12 @@ export function CommunityBoard({ communityName }: CommunityBoardProps) {
           </CardFooter>
         )}
       </Card>
-
-      {/* 게시글 목록 */}
+      
+      {/* ---------------- 게시글 목록 ---------------- */}
       {mockPosts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <Link key={post.id} href={`/community/${post.id}`} className="block h-full group">
+          <PostCard post={post} />
+        </Link>
       ))}
     </div>
   );
