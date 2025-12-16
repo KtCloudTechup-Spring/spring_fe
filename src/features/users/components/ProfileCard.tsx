@@ -63,8 +63,8 @@ export default function ProfileCard({ currentCommunityId }: ProfileCardProps) {
         {/* 1. 프로필 사진 */}
         <Avatar className={`w-20 h-20 mb-4 ring-4 ring-gray-50 ${user ? 'group-hover:ring-slate-200 transition-all' : ''}`}>
           {user?.profileImage && user.profileImage !== 'default.png' ? (
-            <AvatarImage 
-              src={`http://localhost:8080/api/profile/avatar/${user.profileImage}`}
+            <AvatarImage
+              src={user.profileImage}
               alt={user.name}
             />
           ) : (
