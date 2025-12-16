@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FileText, MessageCircle, Heart, User, LogIn, MessageSquare, LogOut } from "lucide-react";
+import { User, LogIn, LogOut } from "lucide-react";
 import { useAuth } from '@/features/auth/AuthContext'; 
 
 interface ProfileCardProps {
@@ -96,42 +96,7 @@ export default function ProfileCard({ currentCommunityId }: ProfileCardProps) {
           </div>
         )}
 
-        {/* 5. 스탯 정보 */}
-        <div className="w-full space-y-3 mb-6">
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center text-gray-500 gap-1.5 whitespace-nowrap">
-              <FileText className="w-4 h-4 flex-shrink-0" />
-              <span>내 게시글</span>
-            </span>
-            <span className="font-bold text-gray-900">{user?.stats?.posts ?? 0}</span>
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center text-gray-500 gap-1.5 whitespace-nowrap">
-              <MessageSquare className="w-4 h-4 flex-shrink-0" />
-              <span>참여 채팅</span>
-            </span>
-            <span className="font-bold text-gray-900">{user?.stats?.participatingChats ?? 0}</span>
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center text-gray-500 gap-1.5 whitespace-nowrap">
-              <MessageCircle className="w-4 h-4 flex-shrink-0" />
-              <span>내 댓글</span>
-            </span>
-            <span className="font-bold text-gray-900">{user?.stats?.comments ?? 0}</span>
-          </div>
-
-          <div className="flex justify-between items-center text-sm">
-            <span className="flex items-center text-gray-500 gap-1.5 whitespace-nowrap">
-              <Heart className="w-4 h-4 flex-shrink-0" />
-              <span>좋아요</span>
-            </span>
-            <span className="font-bold text-gray-900">{user?.stats?.likes ?? 0}</span>
-          </div>
-        </div>
-
-        {/* 6. 버튼 */}
+        {/* 5. 버튼 */}
         <Button 
           className="w-full font-bold h-11 text-sm shadow-sm bg-slate-900 hover:bg-slate-800 text-white transition-colors"
           onClick={(e) => {
