@@ -32,6 +32,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (accessToken: string, userData: User) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 // 3. Context 생성
@@ -107,12 +108,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     router.push('/login');
   };
 
+  // 사용자 정보 새로고침 함수
+  const refreshUser = async () => {
+    const storedToken = localStorage.getItem('accessToken');
+    if (!storedToken) return;
+
+    try {
+      const response = await fetch('/api/me', {
+        headers: {
+          'Authorization': `Bearer ${storedToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const userData = data.data || data;
+
+        // 이미지 경로 수정 로직 적용
+        let processedUser = { ...userData };
+        if (processedUser.profileImage) {
+          let imgPath = processedUser.profileImage;
+
+          if (imgPath.startsWith("/uploads") && !imgPath.startsWith("/uploads/")) {
+            imgPath = imgPath.replace("/uploads", "/uploads/");
+          }
+
+          if (!imgPath.startsWith("http") && imgPath !== "default.png") {
+            imgPath = `http://localhost:8080${imgPath}`;
+          }
+
+          processedUser.profileImage = imgPath;
+        }
+
+        setUser(processedUser);
+        localStorage.setItem('user', JSON.stringify(processedUser));
+      }
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
+  };
+
   const contextValue: AuthContextType = {
     user,
     token,
     isLoading,
     login,
     logout,
+    refreshUser,
   };
 
   return (
