@@ -43,73 +43,78 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
     const fetchPosts = async () => {
       setIsLoading(true);
       try {
-        // ========================================
-        // TODO: API 연동 시 아래 주석 해제하고 사용
-        // ========================================
-        // const response = await fetch(`/api/posts?communityId=${communityId}`);
-        // if (response.ok) {
-        //   const data = await response.json();
-        //   setPosts(data);
-        // }
-        // ========================================
+        const token = localStorage.getItem("accessToken");
 
-        // 임시 데이터 (API 연동 후 삭제)
-        const mockPosts: Post[] = [
-          {
-            id: 1,
-            tag: "질문",
-            title: "Next.js 14에서 서버 액션 에러 질문입니다 ㅠㅠ",
-            content:
-              "서버 컴포넌트에서 클라이언트 컴포넌트로 props를 넘길 때 직렬화 에러가 자꾸 뜨는데 도저히 이유를 모르겠네요.",
-            author: "코딩초보",
-            date: "방금 전",
-            likes: 2,
-            comments: 4,
-            badgeColor: "bg-red-100 text-red-600 hover:bg-red-100",
+        // ========== 디버깅 정보 출력 ==========
+        console.log("========== 게시글 요청 시작 ==========");
+        console.log("communityId:", communityId);
+        console.log("토큰 존재:", !!token);
+        console.log("토큰:", token);
+
+        // 방법 1: 기본 fetch (현재 방식)
+        console.log("\n[시도 1] 기본 fetch with Authorization header");
+        const requestUrl = `/api/posts?courseId=${communityId}`;
+        console.log("URL:", requestUrl);
+
+        const response = await fetch(requestUrl, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
           },
-          {
-            id: 2,
-            tag: "팁",
-            title: "Tailwind CSS 쓰실 때 유용한 플러그인 추천",
-            content:
-              "클래스명이 너무 길어져서 가독성이 떨어질 때 'tailwind-merge'랑 'clsx' 조합해서 쓰면 진짜 편합니다.",
-            author: "CSS장인",
-            date: "10분 전",
-            likes: 15,
-            comments: 8,
-            badgeColor: "bg-blue-100 text-blue-600 hover:bg-blue-100",
-          },
-          {
-            id: 3,
-            tag: "정보",
-            title: "2024년 프론트엔드 로드맵 정리 공유합니다",
-            content:
-              "이번에 취업 준비하면서 정리한 로드맵입니다. React, Next.js, TS 중심으로 정리했고 필요하신 분들 참고하세요!",
-            author: "취준생",
-            date: "1시간 전",
-            likes: 42,
-            comments: 12,
-            badgeColor: "bg-green-100 text-green-600 hover:bg-green-100",
-          },
-          {
-            id: 4,
-            tag: "잡담",
-            title: "요즘 개발자 취업 시장 어떤가요?",
-            content:
-              "신입으로 지원하고 있는데 서류 통과율이 너무 낮네요... 포트폴리오를 갈아엎어야 할지 고민입니다.",
-            author: "고민많음",
-            date: "3시간 전",
-            likes: 5,
-            comments: 21,
-            badgeColor: "bg-gray-100 text-gray-600 hover:bg-gray-100",
-          },
-        ];
-        setPosts(mockPosts);
-        
+          credentials: "include", // 쿠키 포함
+        });
+
+        console.log("\n========== 응답 정보 ==========");
+        console.log("상태 코드:", response.status);
+        console.log("상태 텍스트:", response.statusText);
+        console.log("응답 헤더:", Object.fromEntries(response.headers.entries()));
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("✅ 성공! 응답 데이터:", data);
+          const postList = data.list || [];
+          setPosts(postList);
+        } else {
+          // 에러 응답을 한 번만 읽기
+          const responseText = await response.text();
+
+          console.error("\n========== 상세 에러 정보 ==========");
+          console.error("상태:", response.status);
+          console.error("에러 응답:", responseText);
+          console.error("요청 URL:", requestUrl);
+          console.error("사용된 토큰:", token);
+          console.error("===================================");
+
+          // 403 에러인 경우 토큰 없이 재시도
+          if (response.status === 403) {
+            console.log("\n[시도 2] 토큰 없이 재시도...");
+            const retryResponse = await fetch(requestUrl, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            console.log("토큰 없이 요청 결과:", retryResponse.status);
+
+            if (retryResponse.ok) {
+              const data = await retryResponse.json();
+              console.log("✅ 토큰 없이 성공!", data);
+              const postList = data.list || [];
+              setPosts(postList);
+            } else {
+              const errorText = await retryResponse.text();
+              console.error("❌ 토큰 없이도 실패:", retryResponse.status, errorText);
+            }
+          }
+        }
       } catch (error) {
-        console.error("게시글 불러오기 실패:", error);
+        console.error("❌ 예외 발생:", error);
+        console.error("에러 상세:", JSON.stringify(error, null, 2));
       } finally {
         setIsLoading(false);
+        console.log("========== 요청 종료 ==========\n");
       }
     };
 

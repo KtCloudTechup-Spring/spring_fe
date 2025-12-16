@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(find:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(del nul)",
+      "Bash(git rm:*)",
+      "Bash(rm:*)"
+    ]
+  }
+}

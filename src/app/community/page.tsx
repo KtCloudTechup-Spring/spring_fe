@@ -64,7 +64,7 @@ export default async function CommunityPage({ searchParams }: PageProps) {
           </div>
 
           {/* 알맹이 컴포넌트 호출 */}
-          <CommunityBoard communityName={community.name} />
+          <CommunityBoard communityName={community.name} communityId={communityId} />
         </section>
       </div>
     </main>
