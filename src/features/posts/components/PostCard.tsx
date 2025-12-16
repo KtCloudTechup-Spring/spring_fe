@@ -24,26 +24,36 @@ interface PostProps {
 }
 
 export default function PostCard({ post }: PostProps) {
+  // 날짜를 년/월/일 형식으로 변환
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\. /g, '-').replace('.', '');
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer border-slate-200 flex flex-col h-full bg-white group">
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start mb-2">
+        <div className="flex justify-between items-start mb-3">
           <Badge
             className={`${post.badgeColor || "bg-slate-100 text-slate-600"} border-none`}
           >
             {post.tag}
           </Badge>
           <span className="text-xs text-slate-400 flex items-center">
-            <Clock className="w-3 h-3 mr-1" /> {post.date}
+            <Clock className="w-3 h-3 mr-1" /> {formatDate(post.date)}
           </span>
         </div>
-        <CardTitle className="text-lg font-bold line-clamp-1 group-hover:text-slate-700 transition-colors">
+        <CardTitle className="text-xl font-extrabold text-slate-900 line-clamp-2 group-hover:text-slate-700 transition-colors leading-tight mb-2">
           {post.title}
         </CardTitle>
       </CardHeader>
 
       <CardContent className="flex-1 pb-3">
-        <p className="text-sm text-slate-500 line-clamp-3 leading-relaxed">
+        <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed">
           {post.content}
         </p>
       </CardContent>

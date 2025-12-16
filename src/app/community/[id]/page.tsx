@@ -7,33 +7,43 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  MessageCircle, 
-  ThumbsUp, 
-  User, 
-  ArrowLeft, 
-  Share2, 
+import {
+  MessageCircle,
+  ThumbsUp,
+  User,
+  ArrowLeft,
+  Share2,
   Send,
   Heart
 } from "lucide-react";
 import Link from "next/link";
+import { getPostById, toggleFavorite } from "@/lib/api/posts";
+import {
+  getComments,
+  createComment,
+  updateComment,
+  deleteComment,
+} from "@/lib/api/comments";
 
 interface Post {
   id: number;
   title: string;
   content: string;
   author: string;
+  authorProfileImage: string;
   date: string;
-  category?: string;
-  views?: number;
   likes: number;
-  isLiked?: boolean;
+  isLiked: boolean;
+  commentCount: number;
 }
 
 interface Comment {
   id: number;
+  postId: number;
+  userId: number;
   content: string;
   author: string;
+  authorProfileImage: string;
   createdAt: string;
   isAuthor?: boolean;
 }
@@ -55,18 +65,23 @@ export default function PostDetailPage() {
     const fetchPost = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/posts/${postId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPost(data.post);
-          setIsLiked(data.post.isLiked || false);
-          // 댓글 목록도 함께 설정 (API 응답에 comments가 포함되어 있다고 가정)
-          if (data.comments) {
-            setComments(data.comments);
-          }
-        } else {
-          console.error("게시글 조회 실패:", response.status);
-        }
+        const response = await getPostById(postId as string);
+
+        // API 응답 데이터를 Post 인터페이스에 맞게 매핑
+        const mappedPost: Post = {
+          id: response.data.id,
+          title: response.data.postTitle,
+          content: response.data.content,
+          author: response.data.authorName,
+          authorProfileImage: response.data.authorProfileImage,
+          date: new Date(response.data.createdAt).toLocaleDateString('ko-KR'),
+          likes: response.data.favoriteCount,
+          isLiked: response.data.favorited,
+          commentCount: response.data.commentCnt,
+        };
+
+        setPost(mappedPost);
+        setIsLiked(response.data.favorited);
       } catch (error) {
         console.error("게시글 조회 실패:", error);
       } finally {
@@ -79,14 +94,63 @@ export default function PostDetailPage() {
     }
   }, [postId]);
 
+  // 댓글 목록 조회
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!postId) return;
+
+      try {
+        const response = await getComments(postId as string);
+
+        // 현재 로그인한 사용자 정보 가져오기
+        const currentUserStr = localStorage.getItem("user");
+        const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+        const currentUserId = currentUser?.id;
+
+        // API 응답을 Comment 인터페이스에 맞게 매핑
+        const mappedComments: Comment[] = response.data.content.map((comment) => ({
+          id: comment.id,
+          postId: comment.postId,
+          userId: comment.userId,
+          content: comment.content,
+          author: comment.authorName,
+          authorProfileImage: comment.authorProfileImage,
+          createdAt: new Date(comment.createdAt).toLocaleString('ko-KR'),
+          isAuthor: currentUserId === comment.userId,
+        }));
+
+        setComments(mappedComments);
+      } catch (error) {
+        console.error("댓글 조회 실패:", error);
+      }
+    };
+
+    if (postId) {
+      fetchComments();
+    }
+  }, [postId]);
+
   // 댓글 목록 새로고침
   const refreshComments = async () => {
     try {
-      const response = await fetch(`/api/posts/${postId}/comments`);
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data.comments || []);
-      }
+      const response = await getComments(postId as string);
+
+      const currentUserStr = localStorage.getItem("user");
+      const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+      const currentUserId = currentUser?.id;
+
+      const mappedComments: Comment[] = response.data.content.map((comment) => ({
+        id: comment.id,
+        postId: comment.postId,
+        userId: comment.userId,
+        content: comment.content,
+        author: comment.authorName,
+        authorProfileImage: comment.authorProfileImage,
+        createdAt: new Date(comment.createdAt).toLocaleString('ko-KR'),
+        isAuthor: currentUserId === comment.userId,
+      }));
+
+      setComments(mappedComments);
     } catch (error) {
       console.error("댓글 조회 실패:", error);
     }
@@ -99,26 +163,23 @@ export default function PostDetailPage() {
 
     try {
       const token = localStorage.getItem("accessToken");
-      const response = await fetch(`/api/posts/${postId}/like`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setIsLiked(data.liked);
-        // 게시글 정보 다시 불러오기 (좋아요 수 업데이트)
-        const postResponse = await fetch(`/api/posts/${postId}`);
-        if (postResponse.ok) {
-          const postData = await postResponse.json();
-          setPost(postData.post);
-        }
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        return;
       }
+
+      const response = await toggleFavorite(postId as string);
+
+      // 좋아요 상태와 개수 업데이트
+      setIsLiked(response.data.favorited);
+      setPost({
+        ...post,
+        likes: response.data.favoriteCount,
+        isLiked: response.data.favorited,
+      });
     } catch (error) {
       console.error("좋아요 처리 실패:", error);
-      alert("로그인이 필요합니다.");
+      alert("좋아요 처리에 실패했습니다.");
     }
   };
 
@@ -137,22 +198,9 @@ export default function PostDetailPage() {
         return;
       }
 
-      const response = await fetch(`/api/posts/${postId}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ content: comment }),
-      });
-
-      if (response.ok) {
-        setComment("");
-        await refreshComments();
-        alert("댓글이 등록되었습니다.");
-      } else {
-        alert("댓글 등록에 실패했습니다.");
-      }
+      await createComment(postId as string, { content: comment });
+      setComment("");
+      await refreshComments();
     } catch (error) {
       console.error("댓글 등록 실패:", error);
       alert("댓글 등록에 실패했습니다.");
@@ -163,24 +211,10 @@ export default function PostDetailPage() {
     if (!editContent.trim()) return;
 
     try {
-      const token = localStorage.getItem("accessToken");
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ content: editContent }),
-      });
-
-      if (response.ok) {
-        setEditingCommentId(null);
-        setEditContent("");
-        await refreshComments();
-        alert("댓글이 수정되었습니다.");
-      } else {
-        alert("댓글 수정에 실패했습니다.");
-      }
+      await updateComment(postId as string, commentId, { content: editContent });
+      setEditingCommentId(null);
+      setEditContent("");
+      await refreshComments();
     } catch (error) {
       console.error("댓글 수정 실패:", error);
       alert("댓글 수정에 실패했습니다.");
@@ -191,20 +225,8 @@ export default function PostDetailPage() {
     if (!confirm("댓글을 삭제하시겠습니까?")) return;
 
     try {
-      const token = localStorage.getItem("accessToken");
-      const response = await fetch(`/api/comments/${commentId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        await refreshComments();
-        alert("댓글이 삭제되었습니다.");
-      } else {
-        alert("댓글 삭제에 실패했습니다.");
-      }
+      await deleteComment(postId as string, commentId);
+      await refreshComments();
     } catch (error) {
       console.error("댓글 삭제 실패:", error);
       alert("댓글 삭제에 실패했습니다.");
@@ -251,18 +273,15 @@ export default function PostDetailPage() {
 
         {/* 헤더 */}
         <div className="p-6 pb-6 border-b border-slate-100">
-          <div className="flex items-center gap-2 mb-4">
-            <Badge variant="secondary" className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-100">
-              {post.category || "일반"}
-            </Badge>
-            <span className="text-xs text-slate-400">조회 {post.views || 0}</span>
-          </div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6 leading-tight">
             {post.title}
           </h1>
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border border-slate-100">
-              <AvatarFallback className="bg-slate-100"><User className="h-5 w-5 text-slate-400" /></AvatarFallback>
+              <AvatarImage src={post.authorProfileImage} />
+              <AvatarFallback className="bg-slate-100">
+                <User className="h-5 w-5 text-slate-400" />
+              </AvatarFallback>
             </Avatar>
             <div>
               <div className="font-semibold text-slate-900 text-sm">{post.author}</div>
@@ -306,7 +325,7 @@ export default function PostDetailPage() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <h3 className="font-bold text-slate-900 mb-6 flex items-center gap-2">
           <MessageCircle className="w-5 h-5" />
-          댓글 {comments.length > 0 && `(${comments.length})`}
+          댓글 {post.commentCount > 0 && `(${post.commentCount})`}
         </h3>
 
         {/* 댓글 목록 */}
@@ -315,6 +334,7 @@ export default function PostDetailPage() {
             {comments.map((commentItem) => (
               <div key={commentItem.id} className="flex gap-3 p-4 bg-slate-50 rounded-lg">
                 <Avatar className="w-8 h-8 mt-1">
+                  <AvatarImage src={commentItem.authorProfileImage} />
                   <AvatarFallback>{commentItem.author[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
@@ -390,26 +410,21 @@ export default function PostDetailPage() {
         )}
 
         {/* 댓글 작성 */}
-        <div className="flex gap-4 items-start">
-          <Avatar className="w-8 h-8 mt-1">
+        <div className="flex gap-3 items-center">
+          <Avatar className="w-8 h-8">
             <AvatarFallback>나</AvatarFallback>
           </Avatar>
-          <div className="flex-1 gap-2 flex flex-col sm:flex-row">
+          <div className="flex-1 flex gap-2 items-center">
             <Textarea
               placeholder="매너 있는 댓글을 남겨주세요."
-              className="min-h-[80px] bg-white resize-y focus-visible:ring-slate-900"
+              className="min-h-[44px] max-h-[120px] bg-white resize-none focus-visible:ring-slate-900 py-3"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
             <Button
               onClick={handleSubmitComment}
-              className="h-[80px] w-20 bg-slate-900 hover:bg-slate-800 hidden sm:flex flex-col gap-1"
+              className="h-[44px] px-5 bg-slate-900 hover:bg-slate-800 shrink-0"
             >
-              <Send className="w-4 h-4" />
-              <span className="text-xs">등록</span>
-            </Button>
-            {/* 모바일용 버튼 */}
-            <Button onClick={handleSubmitComment} className="w-full sm:hidden bg-slate-900">
               등록
             </Button>
           </div>
