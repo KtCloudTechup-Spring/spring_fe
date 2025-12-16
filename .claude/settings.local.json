@@ -7,7 +7,8 @@
       "Bash(findstr:*)",
       "Bash(del nul)",
       "Bash(git rm:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(tree:*)"
     ]
   }
 }

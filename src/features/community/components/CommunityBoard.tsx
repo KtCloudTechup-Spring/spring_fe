@@ -44,77 +44,40 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
       setIsLoading(true);
       try {
         const token = localStorage.getItem("accessToken");
-
-        // ========== 디버깅 정보 출력 ==========
-        console.log("========== 게시글 요청 시작 ==========");
-        console.log("communityId:", communityId);
-        console.log("토큰 존재:", !!token);
-        console.log("토큰:", token);
-
-        // 방법 1: 기본 fetch (현재 방식)
-        console.log("\n[시도 1] 기본 fetch with Authorization header");
-        const requestUrl = `/api/posts?courseId=${communityId}`;
-        console.log("URL:", requestUrl);
+        const requestUrl = `/api/posts/community/${communityId}`;
 
         const response = await fetch(requestUrl, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            ...(token && { "Authorization": `Bearer ${token}` }),
           },
-          credentials: "include", // 쿠키 포함
         });
 
-        console.log("\n========== 응답 정보 ==========");
-        console.log("상태 코드:", response.status);
-        console.log("상태 텍스트:", response.statusText);
-        console.log("응답 헤더:", Object.fromEntries(response.headers.entries()));
-
         if (response.ok) {
-          const data = await response.json();
-          console.log("✅ 성공! 응답 데이터:", data);
-          const postList = data.list || [];
-          setPosts(postList);
-        } else {
-          // 에러 응답을 한 번만 읽기
-          const responseText = await response.text();
+          const result = await response.json();
+          const postList = result.data?.content || [];
 
-          console.error("\n========== 상세 에러 정보 ==========");
-          console.error("상태:", response.status);
-          console.error("에러 응답:", responseText);
-          console.error("요청 URL:", requestUrl);
-          console.error("사용된 토큰:", token);
-          console.error("===================================");
+          // API 응답 필드를 컴포넌트가 요구하는 Post 인터페이스로 매핑
+          const mappedPosts: Post[] = postList.map((item: any) => {
+            console.log('API 응답 데이터:', item); 
+            return {
+              id: item.id,
+              title: item.postTitle || item.title || '제목 없음',
+              content: item.content,
+              author: item.authorName,
+              date: item.createdAt,
+              likes: item.favorited ? 1 : 0,
+              comments: item.commentCount,
+            };
+          });
 
-          // 403 에러인 경우 토큰 없이 재시도
-          if (response.status === 403) {
-            console.log("\n[시도 2] 토큰 없이 재시도...");
-            const retryResponse = await fetch(requestUrl, {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            });
-
-            console.log("토큰 없이 요청 결과:", retryResponse.status);
-
-            if (retryResponse.ok) {
-              const data = await retryResponse.json();
-              console.log("✅ 토큰 없이 성공!", data);
-              const postList = data.list || [];
-              setPosts(postList);
-            } else {
-              const errorText = await retryResponse.text();
-              console.error("❌ 토큰 없이도 실패:", retryResponse.status, errorText);
-            }
-          }
+          setPosts(mappedPosts);
         }
       } catch (error) {
-        console.error("❌ 예외 발생:", error);
-        console.error("에러 상세:", JSON.stringify(error, null, 2));
+        // 에러 발생시 빈 배열 유지
       } finally {
         setIsLoading(false);
-        console.log("========== 요청 종료 ==========\n");
       }
     };
 
