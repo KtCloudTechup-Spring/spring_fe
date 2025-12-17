@@ -10,7 +10,8 @@
       "Bash(rm:*)",
       "Bash(tree:*)",
       "Bash(git clean:*)",
-      "Bash(npx shadcn@latest add dialog:*)"
+      "Bash(npx shadcn@latest add dialog:*)",
+      "Bash(gh pr create:*)"
     ]
   }
 }
