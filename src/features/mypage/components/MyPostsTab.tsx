@@ -42,7 +42,7 @@ export default function MyPostsTab() {
   };
 
   const handlePostClick = (postId: number) => {
-    router.push(`/community/post/${postId}`);
+    router.push(`/community/${postId}`);
   };
 
   const getCommunityName = (communityId: number) => {
