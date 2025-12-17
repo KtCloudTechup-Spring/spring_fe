@@ -35,6 +35,7 @@ interface Post {
   likes: number;
   isLiked: boolean;
   commentCount: number;
+  communityId?: number;
 }
 
 interface Comment {
@@ -60,6 +61,22 @@ export default function PostDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
 
+  const getCommunityName = (communityId?: number) => {
+    if (!communityId) return null;
+    const communities: { [key: number]: string } = {
+      1: "풀스택",
+      2: "프론트엔드",
+      3: "백엔드",
+      4: "생성형 AI",
+      5: "사이버 보안",
+      6: "클라우드 인프라",
+      7: "클라우드 네이티브",
+      8: "프로덕트 디자인",
+      9: "프로덕트 매니지먼트",
+    };
+    return communities[communityId] || `커뮤니티 ${communityId}`;
+  };
+
   // 게시글 상세 조회
   useEffect(() => {
     const fetchPost = async () => {
@@ -67,10 +84,12 @@ export default function PostDetailPage() {
       try {
         const response = await getPostById(postId as string);
 
+        console.log('API Response:', response);
+
         // API 응답 데이터를 Post 인터페이스에 맞게 매핑
         const mappedPost: Post = {
           id: response.data.id,
-          title: response.data.postTitle,
+          title: response.data.postTitle || response.data.title,
           content: response.data.content,
           author: response.data.authorName,
           authorProfileImage: response.data.authorProfileImage,
@@ -78,7 +97,10 @@ export default function PostDetailPage() {
           likes: response.data.favoriteCount,
           isLiked: response.data.favorited,
           commentCount: response.data.commentCnt,
+          communityId: response.data.communityId,
         };
+
+        console.log('Mapped Post:', mappedPost);
 
         setPost(mappedPost);
         setIsLiked(response.data.favorited);
@@ -273,9 +295,16 @@ export default function PostDetailPage() {
 
         {/* 헤더 */}
         <div className="p-6 pb-6 border-b border-slate-100">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-6 leading-tight">
-            {post.title}
-          </h1>
+          <div className="flex items-start justify-between gap-3 mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight flex-1">
+              {post.title}
+            </h1>
+            {post.communityId && (
+              <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full whitespace-nowrap">
+                {getCommunityName(post.communityId)}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border border-slate-100">
               <AvatarImage src={post.authorProfileImage} />

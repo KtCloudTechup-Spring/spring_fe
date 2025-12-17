@@ -29,9 +29,7 @@ export default function ProfileCard({ currentCommunityId }: ProfileCardProps) {
 
   const handleLogout = (e: React.MouseEvent) => {
     e.stopPropagation();
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    window.location.reload();
+    logout();
   };
     
   if (isLoading) {
