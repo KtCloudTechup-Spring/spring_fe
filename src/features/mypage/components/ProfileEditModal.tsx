@@ -76,7 +76,9 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
 
       // 2. 닉네임 수정
       if (nickname !== user?.name) {
-        const nicknameResponse = await fetch("/api/profile/profile-change", {
+        console.log("닉네임 변경 요청:", { name: nickname });
+
+        const nicknameResponse = await fetch("/api/profile/change-profile", {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -85,13 +87,28 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
           body: JSON.stringify({ name: nickname }),
         });
 
+        console.log("닉네임 변경 응답 상태:", nicknameResponse.status);
+
         if (!nicknameResponse.ok) {
-          throw new Error("닉네임 변경에 실패했습니다.");
+          const errorData = await nicknameResponse.json().catch(() => ({}));
+          console.error("닉네임 변경 실패:", errorData);
+
+          // 500 에러 시 백엔드 문제임을 명시
+          if (nicknameResponse.status === 500) {
+            throw new Error("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+          }
+
+          throw new Error(errorData.message || "닉네임 변경에 실패했습니다.");
         }
+
+        const successData = await nicknameResponse.json();
+        console.log("닉네임 변경 성공:", successData);
       }
 
       // 3. 사용자 정보 새로고침
+      console.log("사용자 정보 새로고침 시작");
       await refreshUser();
+      console.log("사용자 정보 새로고침 완료");
 
       // 4. 모달 닫기
       onClose();
