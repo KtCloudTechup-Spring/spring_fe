@@ -58,7 +58,7 @@ export default function PopularChatList({ chatRooms }: { chatRooms: ChatRoom[] }
               </div>
 
               <div className="mt-auto">
-                <Button className="w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all group-hover:border-teal-500 group-hover:text-teal-600">
+                <Button className="w-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all group-hover:border-slate-900 group-hover:text-slate-900">
                   채팅 참여하기 <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Heart, MessageSquare } from "lucide-react";
 
 // 데이터 타입 정의
@@ -110,10 +109,10 @@ export default function RecentPostList() {
       <div className="space-y-4">
         {posts.map((post) => (
           <Link key={post.id} href={`/community/${post.id}`}>
-            <Card className="overflow-hidden hover:border-teal-500 hover:shadow-md transition-all cursor-pointer border-gray-200 group bg-white">
+            <Card className="overflow-hidden hover:border-slate-900 hover:shadow-md transition-all cursor-pointer border-gray-200 group bg-white">
               {/* 내용 */}
               <div className="flex flex-col justify-center p-6 w-full">
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-teal-600 transition-colors">
+                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-slate-900 transition-colors">
                   {post.title}
                 </h3>
                 <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
@@ -121,9 +120,6 @@ export default function RecentPostList() {
                 </p>
 
                 <div className="flex items-center gap-3 text-xs text-gray-400">
-                  <Avatar className="w-5 h-5">
-                    <AvatarImage src="https://github.com/shadcn.png" />
-                  </Avatar>
                   <span className="text-gray-700 font-medium">{post.author}</span>
                   <span>·</span>
                   <span>{post.date}</span>
