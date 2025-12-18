@@ -25,7 +25,6 @@ export interface SignupErrors {
   name?: string;
   communityId?: string;
   agreed?: string;
-  avatar?: string;
   form?: string;
 }
 

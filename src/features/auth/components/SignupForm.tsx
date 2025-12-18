@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Loader2, Camera, User, AlertCircle } from "lucide-react";
+import { UserPlus, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useSignupForm } from "@/hooks/useSignupForm";
 import { FormField } from "@/components/ui/FormField";
@@ -58,41 +58,6 @@ export default function SignupForm() {
               <p className="text-sm text-red-600">{errors.form}</p>
             </div>
           )}
-
-          {/* 프로필 이미지 (선택) */}
-          <div className="flex flex-col items-center space-y-3">
-            <Label className="text-base">프로필 이미지 (선택)</Label>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="relative w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 hover:border-slate-400 cursor-pointer transition-colors flex items-center justify-center overflow-hidden group"
-            >
-              {avatarPreview ? (
-                <img
-                  src={avatarPreview}
-                  alt="프로필 미리보기"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-10 h-10 text-slate-300" />
-              )}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Camera className="w-6 h-6 text-white" />
-              </div>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
-            <p className="text-xs text-slate-400">
-              클릭하여 이미지 선택 (최대 5MB)
-            </p>
-            {errors.avatar && (
-              <p className="text-sm text-red-500">{errors.avatar}</p>
-            )}
-          </div>
 
           {/* 1. 이메일 */}
           <FormField
