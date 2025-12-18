@@ -61,6 +61,8 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
         const formData = new FormData();
         formData.append("file", profileImage);
 
+        console.log("프로필 사진 업로드 시작");
+
         const imageResponse = await fetch("/api/profile/avatar", {
           method: "POST",
           headers: {
@@ -69,9 +71,22 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
           body: formData,
         });
 
+        console.log("프로필 사진 업로드 응답 상태:", imageResponse.status);
+
         if (!imageResponse.ok) {
-          throw new Error("프로필 사진 업로드에 실패했습니다.");
+          const errorData = await imageResponse.json().catch(() => ({}));
+          console.error("프로필 사진 업로드 실패:", errorData);
+
+          // 500 에러 시 백엔드 문제임을 명시
+          if (imageResponse.status === 500) {
+            throw new Error("서버 오류가 발생했습니다. 백엔드 로그를 확인해주세요.");
+          }
+
+          throw new Error(errorData.message || "프로필 사진 업로드에 실패했습니다.");
         }
+
+        const successData = await imageResponse.json();
+        console.log("프로필 사진 업로드 성공:", successData);
       }
 
       // 2. 닉네임 수정
@@ -110,9 +125,12 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
       await refreshUser();
       console.log("사용자 정보 새로고침 완료");
 
-      // 4. 모달 닫기
-      onClose();
+      // 4. 모달 닫기 및 상태 초기화
       resetForm();
+      onClose();
+
+      // 5. 페이지 새로고침 (임시 - 디버깅용)
+      window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "프로필 수정에 실패했습니다.");
     } finally {
@@ -145,15 +163,13 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
           {/* 프로필 사진 */}
           <div className="flex flex-col items-center gap-4">
             <Avatar className="w-24 h-24">
-              {previewImage ? (
-                <AvatarImage src={previewImage} alt="Preview" />
-              ) : user?.profileImage && user.profileImage !== 'default.png' ? (
+              {previewImage && <AvatarImage src={previewImage} alt="Preview" />}
+              {!previewImage && user?.profileImage && user.profileImage !== 'default.png' && (
                 <AvatarImage src={user.profileImage} alt={user.name} />
-              ) : (
-                <AvatarFallback className="bg-gray-100">
-                  <User className="w-12 h-12 text-gray-400" />
-                </AvatarFallback>
               )}
+              <AvatarFallback className="bg-gray-100">
+                <User className="w-12 h-12 text-gray-400" />
+              </AvatarFallback>
             </Avatar>
 
             <input

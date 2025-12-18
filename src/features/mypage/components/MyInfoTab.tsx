@@ -24,13 +24,12 @@ export default function MyInfoTab() {
               {/* 프로필 이미지 */}
               <div className="relative">
                 <Avatar className="w-24 h-24">
-                  {user.profileImage && user.profileImage !== 'default.png' ? (
+                  {user.profileImage && user.profileImage !== 'default.png' && (
                     <AvatarImage src={user.profileImage} alt={user.name} />
-                  ) : (
-                    <AvatarFallback className="bg-gray-100">
-                      <User className="w-12 h-12 text-gray-400" />
-                    </AvatarFallback>
                   )}
+                  <AvatarFallback className="bg-gray-100">
+                    <User className="w-12 h-12 text-gray-400" />
+                  </AvatarFallback>
                 </Avatar>
                 <Button
                   size="sm"
