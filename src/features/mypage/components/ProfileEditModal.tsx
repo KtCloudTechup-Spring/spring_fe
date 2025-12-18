@@ -61,6 +61,8 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
         const formData = new FormData();
         formData.append("file", profileImage);
 
+        console.log("프로필 사진 업로드 시작");
+
         const imageResponse = await fetch("/api/profile/avatar", {
           method: "POST",
           headers: {
@@ -69,9 +71,22 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
           body: formData,
         });
 
+        console.log("프로필 사진 업로드 응답 상태:", imageResponse.status);
+
         if (!imageResponse.ok) {
-          throw new Error("프로필 사진 업로드에 실패했습니다.");
+          const errorData = await imageResponse.json().catch(() => ({}));
+          console.error("프로필 사진 업로드 실패:", errorData);
+
+          // 500 에러 시 백엔드 문제임을 명시
+          if (imageResponse.status === 500) {
+            throw new Error("서버 오류가 발생했습니다. 백엔드 로그를 확인해주세요.");
+          }
+
+          throw new Error(errorData.message || "프로필 사진 업로드에 실패했습니다.");
         }
+
+        const successData = await imageResponse.json();
+        console.log("프로필 사진 업로드 성공:", successData);
       }
 
       // 2. 닉네임 수정
