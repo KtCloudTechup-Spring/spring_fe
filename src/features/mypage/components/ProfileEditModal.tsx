@@ -145,15 +145,13 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
           {/* 프로필 사진 */}
           <div className="flex flex-col items-center gap-4">
             <Avatar className="w-24 h-24">
-              {previewImage ? (
-                <AvatarImage src={previewImage} alt="Preview" />
-              ) : user?.profileImage && user.profileImage !== 'default.png' ? (
+              {previewImage && <AvatarImage src={previewImage} alt="Preview" />}
+              {!previewImage && user?.profileImage && user.profileImage !== 'default.png' && (
                 <AvatarImage src={user.profileImage} alt={user.name} />
-              ) : (
-                <AvatarFallback className="bg-gray-100">
-                  <User className="w-12 h-12 text-gray-400" />
-                </AvatarFallback>
               )}
+              <AvatarFallback className="bg-gray-100">
+                <User className="w-12 h-12 text-gray-400" />
+              </AvatarFallback>
             </Avatar>
 
             <input
