@@ -13,6 +13,7 @@ interface PostProps {
     tag?: string;
     title: string;
     content: string;
+    imageUrl?: string;
     author: string;
     date: string;
     likes: number;
@@ -44,6 +45,17 @@ export default function PostCard({ post }: PostProps) {
         <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed mb-6">
           {post.content}
         </p>
+
+        {/* 이미지 썸네일 */}
+        {post.imageUrl && (
+          <div className="mt-auto">
+            <img
+              src={post.imageUrl}
+              alt={post.title}
+              className="w-full h-48 object-cover rounded-lg border border-slate-200"
+            />
+          </div>
+        )}
       </CardHeader>
 
       <CardFooter className="flex flex-col items-stretch px-8 py-0 border-t border-slate-100 gap-2">

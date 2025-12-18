@@ -29,6 +29,7 @@ interface Post {
   id: number;
   title: string;
   content: string;
+  imageUrl?: string;
   author: string;
   authorProfileImage: string;
   date: string;
@@ -91,6 +92,7 @@ export default function PostDetailPage() {
           id: response.data.id,
           title: response.data.postTitle || response.data.title,
           content: response.data.content,
+          imageUrl: response.data.imageUrl,
           author: response.data.authorName,
           authorProfileImage: response.data.authorProfileImage,
           date: new Date(response.data.createdAt).toLocaleDateString('ko-KR'),
@@ -323,6 +325,17 @@ export default function PostDetailPage() {
         <div className="p-6 text-slate-800 whitespace-pre-line leading-relaxed min-h-[100px]">
           {post.content}
         </div>
+
+        {/* 이미지 (있을 경우만 표시) */}
+        {post.imageUrl && (
+          <div className="px-6 pb-6">
+            <img
+              src={post.imageUrl}
+              alt={post.title}
+              className="w-full max-w-2xl mx-auto rounded-lg border border-slate-200"
+            />
+          </div>
+        )}
 
         {/* 인터랙션 섹션 (좋아요/공유) */}
         <div className="p-6 bg-slate-50/50 border-t border-slate-100">

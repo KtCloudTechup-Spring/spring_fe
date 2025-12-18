@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Upload, X, ImageIcon } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext"; 
 
 const communities = [
@@ -32,7 +32,7 @@ const communities = [
 function PostFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, token } = useAuth(); 
+  const { user, token } = useAuth();
   const initialCategoryId = searchParams.get("category");
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -40,6 +40,10 @@ function PostFormContent() {
     content: "",
     communityId: initialCategoryId ? initialCategoryId : "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -52,6 +56,42 @@ function PostFormContent() {
     setFormData((prev) => ({ ...prev, communityId: value }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 파일 형식 검증
+    if (!file.type.startsWith("image/")) {
+      setImageError("이미지 파일만 업로드 가능합니다.");
+      return;
+    }
+
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("파일 크기는 5MB 이하여야 합니다.");
+      return;
+    }
+
+    setImageFile(file);
+    setImageError(null);
+
+    // 미리보기 생성
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -61,7 +101,7 @@ function PostFormContent() {
       router.push("/login");
       return;
     }
-    
+
     // 2. 클라이언트 측 유효성 검사
     if (!formData.communityId) {
       alert("게시판을 선택해주세요.");
@@ -75,31 +115,57 @@ function PostFormContent() {
       alert("내용을 입력해주세요.");
       return;
     }
-    
+
     setIsLoading(true);
 
-    // 3. API 명세에 맞는 Payload 구성
-    const payload = {
-      communityId: Number(formData.communityId),
-      title: formData.title,
-      content: formData.content,
-    };
-
-    // 4. API 호출
     try {
+      // 3. FormData 구성 (백엔드 MULTIPART_FORM_DATA 형식에 맞춤)
+      const formDataToSend = new FormData();
+
+      // request 파트: JSON 문자열을 Blob으로 전송 (Content-Type 명시)
+      const requestData = {
+        communityId: Number(formData.communityId),
+        title: formData.title,
+        content: formData.content,
+      };
+
+      const requestBlob = new Blob([JSON.stringify(requestData)], {
+        type: "application/json",
+      });
+      formDataToSend.append("request", requestBlob);
+
+      // image 파트: 이미지 파일 (선택사항)
+      if (imageFile) {
+        formDataToSend.append("image", imageFile);
+      }
+
+      // 디버깅: FormData 내용 확인
+      console.log("=== FormData 전송 내용 ===");
+      console.log("Request Data:", requestData);
+      console.log("Image File:", imageFile?.name || "없음");
+      for (let pair of formDataToSend.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
+      // 4. API 호출
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`, 
+          Authorization: `Bearer ${token}`,
+          // Content-Type은 FormData 사용 시 자동 설정됨 (boundary 포함)
         },
-        body: JSON.stringify(payload),
+        body: formDataToSend,
       });
-      
+
+      console.log("=== API 응답 ===");
+      console.log("Status:", response.status);
+      console.log("Status Text:", response.statusText);
+
       if (response.ok) {
         const result = await response.json();
-        const newPostId = result.postId || '등록 완료';
-        
+        console.log("성공 응답:", result);
+        const newPostId = result.data?.postId || result.postId || "등록 완료";
+
         alert(`게시글이 성공적으로 등록되었습니다! (ID: ${newPostId})`);
         router.push(`/community?category=${formData.communityId}`);
       } else if (response.status === 401) {
@@ -107,12 +173,29 @@ function PostFormContent() {
         router.push("/login");
       } else if (response.status === 400) {
         const errorData = await response.json();
-        alert(`입력 오류: ${errorData.message || '입력하신 정보를 확인해주세요.'}`);
+        console.error("400 에러 응답:", errorData);
+        alert(
+          `입력 오류: ${errorData.message || "입력하신 정보를 확인해주세요."}`
+        );
+      } else if (response.status === 500) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error("500 에러 응답:", errorData);
+        } catch (e) {
+          const errorText = await response.text();
+          console.error("500 에러 (텍스트):", errorText);
+        }
+        alert(
+          `서버 오류가 발생했습니다. 백엔드 로그를 확인해주세요.\n에러: ${errorData?.message || "Internal Server Error"}`
+        );
       } else {
-        throw new Error("서버에서 글 등록에 실패했습니다.");
+        const errorText = await response.text();
+        console.error("기타 에러:", errorText);
+        throw new Error(`서버에서 글 등록에 실패했습니다. (${response.status})`);
       }
     } catch (error: any) {
-      console.error("게시글 등록 중 오류 발생:", error.message);
+      console.error("게시글 등록 중 오류 발생:", error);
       alert(`오류가 발생했습니다: ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -183,6 +266,61 @@ function PostFormContent() {
                 value={formData.content}
                 onChange={handleChange}
               />
+            </div>
+
+            {/* 이미지 업로드 */}
+            <div className="space-y-2">
+              <Label>이미지 첨부 (선택)</Label>
+
+              {/* 이미지 미리보기 */}
+              {imagePreview && (
+                <div className="relative inline-block">
+                  <img
+                    src={imagePreview}
+                    alt="미리보기"
+                    className="max-w-full max-h-64 rounded-lg border border-slate-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    disabled={isLoading}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* 이미지 업로드 버튼 */}
+              {!imagePreview && (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isLoading}
+                    className="w-full h-32 border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+                  >
+                    <div className="flex flex-col items-center gap-2 text-slate-500">
+                      <ImageIcon className="w-8 h-8" />
+                      <span className="text-sm">이미지를 선택하세요 (최대 5MB)</span>
+                    </div>
+                  </Button>
+                </div>
+              )}
+
+              {/* 에러 메시지 */}
+              {imageError && (
+                <p className="text-sm text-red-500">{imageError}</p>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4">

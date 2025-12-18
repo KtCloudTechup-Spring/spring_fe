@@ -27,6 +27,7 @@ export interface PostDetailResponse {
     authorProfileImage: string;
     postTitle: string;
     content: string;
+    imageUrl?: string;
     favoriteCount: number;
     favorited: boolean;
     createdAt: string;
