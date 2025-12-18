@@ -50,35 +50,6 @@ const mockPopularChatRooms = [
   },
 ];
 
-const mockAllPosts = [
-  {
-    id: 101,
-    title: "React와 TypeScript로 풀스택 개발하기",
-    desc: "React와 TypeScript를 활용한 풀스택 개발 경험을 공유합니다.",
-    author: "풀스택장인",
-    date: "2024-12-04",
-    likes: 42,
-    comments: 5,
-  },
-  {
-    id: 102,
-    title: "Next.js 14 App Router 완벽 가이드",
-    desc: "Next.js 14버전부터 도입된 App Router의 핵심 개념과 사용법을 정리했습니다.",
-    author: "넥스트",
-    date: "2024-12-03",
-    likes: 38,
-    comments: 12,
-  },
-  {
-    id: 103,
-    title: "Tailwind CSS로 디자인 시스템 구축하기",
-    desc: "유틸리티 퍼스트 CSS의 장점과 실무 적용 사례를 알아봅니다.",
-    author: "퍼블리셔",
-    date: "2024-12-02",
-    likes: 25,
-    comments: 8,
-  },
-];
 // ===============================================
 
 export default function Home() {
@@ -95,8 +66,8 @@ export default function Home() {
           {/* 1. 인기 채팅방 목록 (교체됨!) */}
           <PopularChatList chatRooms={mockPopularChatRooms} />
 
-          {/* 2. 전체 게시글 목록 */}
-          <RecentPostList posts={mockAllPosts} />
+          {/* 2. 최근 게시글 목록 */}
+          <RecentPostList />
         </section>
       </div>
     </main>
