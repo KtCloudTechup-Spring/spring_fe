@@ -15,7 +15,10 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(netstat:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git reflog:*)",
+      "Bash(git for-each-ref:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
