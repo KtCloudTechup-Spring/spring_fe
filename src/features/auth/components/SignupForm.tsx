@@ -32,10 +32,7 @@ export default function SignupForm() {
     formData,
     errors,
     isLoading,
-    avatarPreview,
-    fileInputRef,
     handleChange,
-    handleAvatarChange,
     handleSubmit,
   } = useSignupForm();
 
