@@ -11,7 +11,11 @@
       "Bash(tree:*)",
       "Bash(git clean:*)",
       "Bash(npx shadcn@latest add dialog:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(netstat:*)",
+      "Bash(echo:*)"
     ]
   }
 }

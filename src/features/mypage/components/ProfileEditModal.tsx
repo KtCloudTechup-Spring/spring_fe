@@ -125,9 +125,12 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
       await refreshUser();
       console.log("사용자 정보 새로고침 완료");
 
-      // 4. 모달 닫기
-      onClose();
+      // 4. 모달 닫기 및 상태 초기화
       resetForm();
+      onClose();
+
+      // 5. 페이지 새로고침 (임시 - 디버깅용)
+      window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "프로필 수정에 실패했습니다.");
     } finally {
