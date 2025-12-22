@@ -58,6 +58,7 @@ interface ChatMessage {
 }
 
 interface JwtPayload {
+  userId: number;
   id: number;
   email: string;
   exp: number;
@@ -281,14 +282,14 @@ export function CommunityBoard({
           )}
         </CardHeader>
 
-        <CardContent className="flex-1 pb-3 flex flex-col">
+        <CardContent className="flex-1 pb-2 flex flex-col">
           {isChatOpen ? (
             <div className="flex-1 flex flex-col justify-between animate-in fade-in duration-500">
               <div
                 ref={chatScrollRef}
-                className="bg-slate-50 rounded-lg p-3 flex-1 mb-3 border border-slate-100 overflow-y-auto max-h-[300px]"
+                className="bg-slate-50 rounded-lg p-3 pb-2 flex-1 mb-1 border border-slate-100 overflow-y-auto max-h-[500px]"
               >
-                <div className="space-y-4 text-sm">
+                <div className="space-y-3 text-sm">
                   {messages.map((msg, idx) => {
                     const isMine = msg.senderId === myUserId;
                     return (

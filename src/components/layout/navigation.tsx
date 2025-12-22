@@ -40,6 +40,118 @@ export default function Navigation() {
 
           {!isSearchOpen && (
             <nav className="hidden md:flex gap-6 text-sm font-medium text-slate-600">
+              {/* [0] 전체 보기 */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 hover:text-slate-900 transition-colors outline-none">
+                    전체 보기 <ChevronDown className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent className="w-64 p-2" align="start">
+                  <DropdownMenuLabel className="text-xs text-gray-500 font-normal mb-1">
+                    모든 커뮤니티
+                  </DropdownMenuLabel>
+
+                  <Link href="/community?category=1">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-blue-100 text-blue-600 rounded-full shrink-0">
+                        <Globe className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">풀스택</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=2">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-purple-100 text-purple-600 rounded-full shrink-0">
+                        <Code className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">프론트엔드</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=3">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-orange-100 text-orange-600 rounded-full shrink-0">
+                        <Server className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">백엔드</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=4">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-indigo-100 text-indigo-600 rounded-full shrink-0">
+                        <Bot className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">생성형 AI</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=5">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-slate-200 text-slate-700 rounded-full shrink-0">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">사이버 보안</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=6">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-orange-100 text-orange-600 rounded-full shrink-0">
+                        <Cloud className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">클라우드 인프라</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=7">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-lime-100 text-lime-600 rounded-full shrink-0">
+                        <Box className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">클라우드 네이티브</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=8">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-pink-100 text-pink-600 rounded-full shrink-0">
+                        <Palette className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">프로덕트 디자인</span>
+                    </DropdownMenuItem>
+                  </Link>
+
+                  <DropdownMenuSeparator className="my-1" />
+
+                  <Link href="/community?category=9">
+                    <DropdownMenuItem className="cursor-pointer p-2 flex items-center gap-3 focus:bg-slate-50 focus:text-slate-900 rounded-md">
+                      <div className="p-2 bg-green-100 text-green-600 rounded-full shrink-0">
+                        <Lightbulb className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-bold">프로덕트 매니지먼트</span>
+                    </DropdownMenuItem>
+                  </Link>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               {/* [1] 웹 개발 */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
