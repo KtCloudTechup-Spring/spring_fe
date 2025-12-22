@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link"; 
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +14,20 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Users, ArrowRight, X, Send } from "lucide-react";
 import PostCard from "@/features/posts/components/PostCard";
+
+import { Client } from "@stomp/stompjs";
+import SockJS from "sockjs-client";
+
+import { jwtDecode } from "jwt-decode";
+
+const token =
+  typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+
+const decodedToken = token ? jwtDecode<JwtPayload>(token) : null;
+console.log("decodedToken:", decodedToken);
+
+const myUserId: number | null = decodedToken?.userId ?? null;
+console.log("myUserId:", myUserId);
 
 // 게시글 타입 정의
 interface Post {
@@ -33,10 +47,63 @@ interface CommunityBoardProps {
   communityId: number;
 }
 
-export function CommunityBoard({ communityName, communityId }: CommunityBoardProps) {
+// 채팅 메세지
+interface ChatMessage {
+  senderId: number;
+  senderName: string;
+  senderEmail: string;
+  content: string;
+  chattingRoomId: number;
+  createdAt?: string;
+}
+
+interface JwtPayload {
+  id: number;
+  email: string;
+  exp: number;
+  iat: number;
+}
+
+export function CommunityBoard({
+  communityName,
+  communityId,
+}: CommunityBoardProps) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // 채팅
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [stompClient, setStompClient] = useState<Client | null>(null);
+
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // 나가기 버튼
+  const handleLeaveChat = async () => {
+    await fetch(`/api/chat-rooms/${communityId}/leave`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    stompClient?.deactivate();
+    setMessages([]);
+    setIsChatOpen(false);
+  };
+
+  // 입장하기 버튼
+  const handleEnterChat = async () => {
+    await fetch(`/api/chat-rooms/${communityId}/join`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    setIsChatOpen(true); // 이후 STOMP 연결됨
+  };
 
   // 게시글 목록 불러오기
   useEffect(() => {
@@ -50,7 +117,7 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            ...(token && { "Authorization": `Bearer ${token}` }),
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         });
 
@@ -60,10 +127,10 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
 
           // API 응답 필드를 컴포넌트가 요구하는 Post 인터페이스로 매핑
           const mappedPosts: Post[] = postList.map((item: any) => {
-            console.log('API 응답 데이터:', item); 
+            console.log("API 응답 데이터:", item);
             return {
               id: item.id,
-              title: item.postTitle || item.title || '제목 없음',
+              title: item.postTitle || item.title || "제목 없음",
               content: item.content,
               author: item.authorName,
               date: item.createdAt,
@@ -84,9 +151,92 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
     fetchPosts();
   }, [communityId]);
 
+  // 채팅 메시지
+  useEffect(() => {
+    if (!isChatOpen) return;
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    const fetchChatHistory = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      const res = await fetch(`/api/chat/${communityId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
+      if (res.ok) {
+        const data: ChatMessage[] = await res.json();
+        setMessages(data); // 초기 채팅 세팅
+      }
+    };
+
+    fetchChatHistory();
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS("http://localhost:8080/ws-stomp"),
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+      debug: (str) => console.log("[STOMP]", str),
+      onConnect: () => {
+        console.log("✅ STOMP 연결 성공");
+
+        client.subscribe(`/sub/chat/${communityId}`, (message) => {
+          console.log("클라이언트 sub");
+          console.log(message.body);
+          const body: ChatMessage = JSON.parse(message.body);
+          setMessages((prev) => [...prev, body]);
+        });
+      },
+      onStompError: (frame) => {
+        console.error("❌ STOMP 에러", frame);
+      },
+    });
+
+    client.activate();
+    setStompClient(client);
+
+    return () => {
+      client.deactivate();
+    };
+  }, [isChatOpen, communityId]);
+
+  // 메시지 전송 함수
+  const sendMessage = () => {
+    if (!stompClient || !input.trim()) return;
+    console.log("pub 전송: " + input);
+
+    stompClient.publish({
+      destination: `/pub/chat/${communityId}`,
+      body: JSON.stringify({
+        content: input,
+      }),
+    });
+
+    setInput("");
+  };
+
+  useEffect(() => {
+    //chatScrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatScrollRef.current;
+    if (!el) {
+      return;
+    }
+    el.scrollTop = el.scrollHeight;
+  }, [messages]); //  messages 배열에 새 메시지가 추가될 때마다 자동 실행됨
+
+  const handleKeyDown = (e: any) => {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+      console.log("엔터");
+      sendMessage();
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[minmax(200px,auto)]">
-      
       {/* ---------------- 채팅방 카드 ---------------- */}
       <Card
         className={`
@@ -114,6 +264,12 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
           </div>
 
           {isChatOpen && (
+            <Button onClick={handleLeaveChat} variant="destructive">
+              채팅방 나가기
+            </Button>
+          )}
+
+          {isChatOpen && (
             <Button
               variant="ghost"
               size="icon"
@@ -128,45 +284,74 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
         <CardContent className="flex-1 pb-3 flex flex-col">
           {isChatOpen ? (
             <div className="flex-1 flex flex-col justify-between animate-in fade-in duration-500">
-              <div className="bg-slate-50 rounded-lg p-3 flex-1 mb-3 border border-slate-100 overflow-y-auto max-h-[300px]">
+              <div
+                ref={chatScrollRef}
+                className="bg-slate-50 rounded-lg p-3 flex-1 mb-3 border border-slate-100 overflow-y-auto max-h-[300px]"
+              >
                 <div className="space-y-4 text-sm">
-                  <div className="flex gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
-                    <div>
-                      <span className="text-xs text-slate-500 block mb-1">
-                        익명123
-                      </span>
-                      <div className="bg-white p-2 rounded-r-lg rounded-bl-lg shadow-sm text-slate-700 border border-slate-200">
-                        안녕하세요! 혹시 {communityName} 관련해서 질문해도
-                        될까요?
+                  {messages.map((msg, idx) => {
+                    const isMine = msg.senderId === myUserId;
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex gap-2 ${
+                          isMine ? "justify-end" : "justify-start"
+                        }`}
+                      >
+                        {/* 상대방 아바타 */}
+                        {!isMine && (
+                          <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
+                        )}
+
+                        <div className={isMine ? "text-right" : "text-left"}>
+                          <span className="text-xs text-slate-500 block mb-1">
+                            {msg.senderName}
+                          </span>
+
+                          <div
+                            className={`p-2 max-w-xs shadow-sm border ${
+                              isMine
+                                ? "bg-slate-900 text-white rounded-bl-lg rounded-t-lg"
+                                : "bg-white text-slate-700 rounded-br-lg rounded-t-lg"
+                            }`}
+                          >
+                            {msg.content}
+                          </div>
+                        </div>
+
+                        {/* 내 아바타 */}
+                        {isMine && (
+                          <div className="w-8 h-8 rounded-full bg-slate-900 shrink-0" />
+                        )}
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 flex-row-reverse">
-                    <div className="w-8 h-8 rounded-full bg-slate-900 shrink-0" />
-                    <div className="text-right">
-                      <span className="text-xs text-slate-500 block mb-1">
-                        나
-                      </span>
-                      <div className="bg-slate-900 p-2 rounded-l-lg rounded-br-lg shadow-sm text-white">
-                        네 안녕하세요! 어떤 게 궁금하신가요?
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-center text-slate-400 my-2">
-                    -- 실시간 대화 참여 중 --
-                  </p>
+                      // <div key={idx} className="flex gap-2">
+                      //   <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
+                      //   <div>
+                      //     <span className="text-xs text-slate-500 block mb-1">
+                      //       {msg.senderName} {msg.senderEmail}
+                      //     </span>
+                      //     <div className="bg-white p-2 rounded-r-lg rounded-bl-lg shadow-sm text-slate-700 border">
+                      //       {msg.content}
+                      //     </div>
+                      //   </div>
+                      // </div>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="flex gap-2">
                 <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
                   placeholder="메시지를 입력하세요..."
-                  className="bg-white focus-visible:ring-slate-900"
+                  onKeyDown={handleKeyDown}
                 />
+
                 <Button
                   size="icon"
-                  className="bg-slate-900 hover:bg-slate-800 shrink-0"
+                  onClick={sendMessage}
+                  className="bg-slate-900 hover:bg-slate-800"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
@@ -182,7 +367,7 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
         {!isChatOpen && (
           <CardFooter className="pt-0 pb-4 mt-auto">
             <Button
-              onClick={() => setIsChatOpen(true)}
+              onClick={handleEnterChat}
               className="w-full bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 font-bold shadow-sm group-hover:border-slate-900 transition-colors"
             >
               입장하기 <ArrowRight className="w-4 h-4 ml-1" />
@@ -190,7 +375,7 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
           </CardFooter>
         )}
       </Card>
-      
+
       {/* ---------------- 게시글 목록 ---------------- */}
       {isLoading ? (
         <div className="col-span-2 flex items-center justify-center py-10">
@@ -202,7 +387,11 @@ export function CommunityBoard({ communityName, communityId }: CommunityBoardPro
         </div>
       ) : (
         posts.map((post) => (
-          <Link key={post.id} href={`/community/${post.id}`} className="block h-full group">
+          <Link
+            key={post.id}
+            href={`/community/${post.id}`}
+            className="block h-full group"
+          >
             <PostCard post={post} />
           </Link>
         ))
