@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,6 +84,7 @@ export function CommunityBoard({
   communityId,
 }: CommunityBoardProps) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,6 +97,7 @@ export function CommunityBoard({
   const [stompClient, setStompClient] = useState<Client | null>(null);
 
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const hasAutoJoined = useRef(false);
 
   // 채팅방 닫기 (단순 UI 닫기)
   const handleCloseChat = () => {
@@ -118,8 +120,18 @@ export function CommunityBoard({
     try {
       await leaveChatRoom(communityId);
       stompClient?.deactivate();
-      setMessages([]);
       setIsChatOpen(false);
+
+      // 마이페이지 채팅 목록 갱신을 위한 이벤트 발생
+      window.dispatchEvent(new CustomEvent('chatRoomLeft', {
+        detail: { communityId }
+      }));
+
+      // openChat 쿼리 파라미터가 있으면 제거하고 뒤로 가기
+      const openChat = searchParams.get('openChat');
+      if (openChat === 'true') {
+        router.back();
+      }
     } catch (error) {
       console.error("채팅방 나가기 실패:", error);
       alert("채팅방 나가기에 실패했습니다. 다시 시도해주세요.");
@@ -211,8 +223,9 @@ export function CommunityBoard({
   // URL 쿼리 파라미터로 채팅방 자동 열기
   useEffect(() => {
     const openChat = searchParams.get('openChat');
-    if (openChat === 'true' && !isChatOpen) {
-      // 채팅방 자동 입장
+    if (openChat === 'true' && !isChatOpen && !hasAutoJoined.current) {
+      // 채팅방 자동 입장 (한 번만 실행)
+      hasAutoJoined.current = true;
       handleEnterChat();
     }
   }, [searchParams, isChatOpen]);

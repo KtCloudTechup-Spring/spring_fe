@@ -210,20 +210,22 @@ export default function CommunityChatList() {
             return (
               <Link
                 key={room.id}
-                href={`/community?category=${room.id}`}
+                href={`/community?category=${room.id}&openChat=true`}
                 className="flex-[0_0_100%] md:flex-[0_0_calc(33.333%-0.67rem)] min-w-0"
               >
                 <Card className="overflow-hidden hover:shadow-lg transition-all border-gray-200 group h-full flex flex-col hover:-translate-y-1 duration-300 cursor-pointer">
                   {/* 상단: 헤더 */}
-                  <div className="bg-slate-700 px-5 py-4">
+                  <div className="bg-white px-5 py-4 border-b border-gray-100">
                     <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        {IconComponent && <IconComponent className="w-6 h-6 text-white/90" />}
-                        <h4 className="font-bold text-xl text-white">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className={`${room.iconBgColor} p-2 rounded-lg shrink-0`}>
+                          {IconComponent && <IconComponent className="w-5 h-5 text-white" />}
+                        </div>
+                        <span className={`${room.bgColor} ${room.textColor} px-3 py-1 rounded-full text-sm font-bold truncate`}>
                           {room.name}
-                        </h4>
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 text-white bg-white/20 px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                      <div className="flex items-center gap-1 text-gray-600 bg-gray-100 px-2 py-1 rounded-full text-xs font-medium shrink-0">
                         <MessageSquare className="w-3 h-3" />
                         {room.messageCount}
                       </div>

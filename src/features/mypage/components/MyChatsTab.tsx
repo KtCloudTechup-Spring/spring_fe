@@ -26,10 +26,17 @@ export default function MyChatsTab() {
       }
     };
 
+    // 채팅방 나가기 이벤트 감지
+    const handleChatRoomLeft = () => {
+      fetchMyChats(true); // 조용히 새로고침
+    };
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('chatRoomLeft', handleChatRoomLeft);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('chatRoomLeft', handleChatRoomLeft);
     };
   }, []);
 
@@ -146,7 +153,7 @@ export default function MyChatsTab() {
       </div>
 
       {/* 채팅방 리스트 */}
-      {chats.map((chat) => {
+      {chats.map((chat, index) => {
         const community = getCommunityById(chat.communityId);
         const bgColor = community?.bgColor || "bg-gray-50";
         const textColor = community?.textColor || "text-gray-700";
@@ -154,11 +161,11 @@ export default function MyChatsTab() {
         const communityName = community?.name || "알 수 없음";
 
         return (
-          <div key={chat.chattingRoomId}>
-            <Card
-              className="cursor-pointer hover:shadow-lg hover:border-slate-300 transition-all group"
-              onClick={() => handleChatClick(chat.communityId)}
-            >
+          <Card
+            key={`chat-${chat.chattingRoomId}-${index}`}
+            className="cursor-pointer hover:shadow-lg hover:border-slate-300 transition-all group"
+            onClick={() => handleChatClick(chat.communityId)}
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -192,8 +199,7 @@ export default function MyChatsTab() {
                 <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-slate-900 group-hover:translate-x-1 transition-all shrink-0" />
               </div>
             </CardContent>
-            </Card>
-          </div>
+          </Card>
         );
       })}
     </div>
