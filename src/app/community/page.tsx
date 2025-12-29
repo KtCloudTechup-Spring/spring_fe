@@ -1,6 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { PenSquare } from "lucide-react";
-import Link from "next/link";
 import ProfileCard from "@/features/users/components/ProfileCard";
 import { CommunityBoard } from "@/features/community/components/CommunityBoard";
 
@@ -16,17 +13,6 @@ const communities = [
   { id: 8, name: "프로덕트 디자인" },
   { id: 9, name: "프로덕트 매니지먼트" },
 ];
-
-// 목데이터 (비로그인시 테스트용)
-// const mockUser = {
-//   name: "홍길동",
-//   email: "hong@example.com",
-//   stats: { posts: 24, participatingChats:3, comments: 156, likes: 89 },
-//   profileImage: "https://github.com/shadcn.png"
-// };
-
-// 목데이터 (로그인시 테스트용 - 현재 null)
-const mockUser = null;
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | undefined }>;
@@ -50,7 +36,7 @@ export default async function CommunityPage({ searchParams }: PageProps) {
         {/* 사이드바 */}
         <section className="hidden lg:block col-span-1">
           <div className="sticky top-24">
-            <ProfileCard user={mockUser} currentCommunityId={communityId} />
+            <ProfileCard currentCommunityId={communityId} />
           </div>
         </section>
 

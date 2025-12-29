@@ -69,9 +69,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // 💡 [핵심 수정] 로그인 함수: 이미지 경로 수리 로직 추가
   const login = (accessToken: string, userData: User) => {
-    
+
     // 1. 사용자 정보 복사 (불변성 유지)
-    let processedUser = { ...userData };
+    const processedUser = { ...userData };
 
     // 2. 이미지 경로 수정 (백엔드 요청사항 반영)
     if (processedUser.profileImage) {
@@ -125,7 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const userData = data.data || data;
 
         // 이미지 경로 수정 로직 적용
-        let processedUser = { ...userData };
+        const processedUser = { ...userData };
         if (processedUser.profileImage) {
           let imgPath = processedUser.profileImage;
 

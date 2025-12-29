@@ -3,17 +3,13 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   MessageCircle,
-  ThumbsUp,
   User,
   ArrowLeft,
   Share2,
-  Send,
   Heart
 } from "lucide-react";
 import Link from "next/link";

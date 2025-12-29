@@ -81,7 +81,7 @@ export default function RecentPostList() {
   if (isLoading) {
     return (
       <div>
-        <h3 className="text-lg font-bold text-gray-800 mb-4">최근 게시글</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-4">최근 게시물</h3>
         <div className="flex items-center justify-center py-10">
           <p className="text-gray-400">게시글을 불러오는 중...</p>
         </div>
@@ -92,7 +92,7 @@ export default function RecentPostList() {
   if (posts.length === 0) {
     return (
       <div>
-        <h3 className="text-lg font-bold text-gray-800 mb-4">최근 게시글</h3>
+        <h3 className="text-lg font-bold text-gray-800 mb-4">최근 게시물</h3>
         <div className="flex items-center justify-center py-10">
           <p className="text-gray-400">아직 게시글이 없습니다.</p>
         </div>
@@ -103,7 +103,7 @@ export default function RecentPostList() {
   return (
     <div>
       <h3 className="text-lg font-bold text-gray-800 mb-4">
-        최근 게시글
+        최근 게시물
       </h3>
 
       <div className="space-y-4">
