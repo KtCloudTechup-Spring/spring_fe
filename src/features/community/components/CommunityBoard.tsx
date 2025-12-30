@@ -102,6 +102,31 @@ export function CommunityBoard({
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const hasAutoJoined = useRef(false);
 
+  // URL을 링크로 변환하는 함수
+  const linkifyText = (text: string) => {
+    // URL 패턴 정규식
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlPattern);
+
+    return parts.map((part, index) => {
+      if (part.match(urlPattern)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline break-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   // 채팅방 닫기 (단순 UI 닫기)
   const handleCloseChat = () => {
     stompClient?.deactivate();
@@ -248,12 +273,61 @@ export function CommunityBoard({
   // URL 쿼리 파라미터로 채팅방 자동 열기
   useEffect(() => {
     const openChat = searchParams.get('openChat');
+
     if (openChat === 'true' && !isChatOpen && !hasAutoJoined.current) {
       // 채팅방 자동 입장 (한 번만 실행)
       hasAutoJoined.current = true;
       handleEnterChat();
     }
   }, [searchParams, isChatOpen]);
+
+  // CustomEvent 리스너 - 공유 요청 처리
+  useEffect(() => {
+    const handleChatShareRequest = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { postId, postTitle, communityId: targetCommunityId } = customEvent.detail;
+
+      // 현재 커뮤니티와 타겟 커뮤니티가 일치하고 채팅이 열려있으며 STOMP 연결이 있을 때만 전송
+      if (targetCommunityId === communityId && isChatOpen && stompClient && stompClient.connected) {
+        // 중복 전송 방지
+        const shareKey = `shared_${postId}_${communityId}`;
+        const lastShared = localStorage.getItem(shareKey);
+        const now = Date.now();
+
+        if (lastShared && now - parseInt(lastShared) < 10 * 60 * 1000) {
+          console.log('중복 공유 방지: 최근에 이미 공유된 게시글입니다.');
+          return;
+        }
+
+        // 공유 메시지 생성 및 전송
+        const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
+
+        console.log('백그라운드 공유 메시지 전송:', shareMessage);
+
+        setTimeout(() => {
+          try {
+            stompClient.publish({
+              destination: `/pub/chat/${communityId}`,
+              body: JSON.stringify({
+                content: shareMessage,
+              }),
+            });
+
+            console.log('✅ 백그라운드 메시지 전송 완료');
+            localStorage.setItem(shareKey, now.toString());
+          } catch (error) {
+            console.error('❌ 백그라운드 메시지 전송 실패:', error);
+          }
+        }, 100);
+      }
+    };
+
+    window.addEventListener('chatShareRequest', handleChatShareRequest);
+
+    return () => {
+      window.removeEventListener('chatShareRequest', handleChatShareRequest);
+    };
+  }, [communityId, isChatOpen, stompClient]);
 
   // STOMP 연결 (채팅방 열렸을 때만)
   useEffect(() => {
@@ -281,6 +355,52 @@ export function CommunityBoard({
             return newMessages.slice(-50);
           });
         });
+
+        // STOMP 연결 성공 후 pendingChatShare 확인
+        const pendingShare = localStorage.getItem('pendingChatShare');
+        if (pendingShare) {
+          try {
+            const shareRequest = JSON.parse(pendingShare);
+
+            // 현재 커뮤니티와 일치하면 메시지 전송
+            if (shareRequest.communityId === communityId) {
+              const { postId, postTitle } = shareRequest;
+
+              // 중복 전송 방지
+              const shareKey = `shared_${postId}_${communityId}`;
+              const lastShared = localStorage.getItem(shareKey);
+              const now = Date.now();
+
+              if (!lastShared || now - parseInt(lastShared) >= 10 * 60 * 1000) {
+                const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
+
+                console.log('pending 공유 메시지 전송:', shareMessage);
+
+                setTimeout(() => {
+                  try {
+                    client.publish({
+                      destination: `/pub/chat/${communityId}`,
+                      body: JSON.stringify({
+                        content: shareMessage,
+                      }),
+                    });
+
+                    console.log('✅ pending 메시지 전송 완료');
+                    localStorage.setItem(shareKey, now.toString());
+                    localStorage.removeItem('pendingChatShare');
+                  } catch (error) {
+                    console.error('❌ pending 메시지 전송 실패:', error);
+                  }
+                }, 500);
+              } else {
+                localStorage.removeItem('pendingChatShare');
+              }
+            }
+          } catch (error) {
+            console.error('pendingChatShare 파싱 실패:', error);
+            localStorage.removeItem('pendingChatShare');
+          }
+        }
       },
       onStompError: (frame) => {
         console.error("❌ STOMP 에러", frame);
@@ -406,13 +526,13 @@ export function CommunityBoard({
                           </span>
 
                           <div
-                            className={`p-2 max-w-xs shadow-sm border inline-block ${
+                            className={`p-2 max-w-xs shadow-sm border inline-block whitespace-pre-line ${
                               isMine
                                 ? "bg-slate-900 text-white rounded-bl-lg rounded-t-lg"
                                 : "bg-white text-slate-700 rounded-br-lg rounded-t-lg"
                             }`}
                           >
-                            {msg.content}
+                            {linkifyText(msg.content)}
                           </div>
                         </div>
 
