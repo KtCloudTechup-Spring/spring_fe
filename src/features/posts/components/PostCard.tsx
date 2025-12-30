@@ -34,25 +34,25 @@ export default function PostCard({ post }: PostProps) {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer border-0 overflow-hidden bg-white group h-full flex flex-col">
-      <CardHeader className="p-8 flex-1 flex flex-col">
+    <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer border-0 overflow-hidden h-[350] bg-white group flex flex-col">
+      <CardHeader className="px-8 py-2 flex-1 flex flex-col">
         {/* 제목 */}
-        <CardTitle className="text-lg font-bold text-slate-900 line-clamp-2 group-hover:text-slate-700 transition-colors mb-4">
+        <CardTitle className="text-lg font-bold text-slate-900 line-clamp-1 group-hover:text-slate-700 transition-colors mb-3">
           {post.title}
         </CardTitle>
 
         {/* 본문 미리보기 */}
-        <p className="text-sm text-slate-600 line-clamp-3 leading-relaxed mb-6">
+        <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed mb-3">
           {post.content}
         </p>
 
-        {/* 이미지 썸네일 */}
+        {/* 썸네일 이미지 */}
         {post.imageUrl && (
-          <div className="mt-auto">
+          <div className="w-full h-24 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center mb-4 shrink-0">
             <img
               src={post.imageUrl}
               alt={post.title}
-              className="w-full h-48 object-cover rounded-lg border border-slate-200"
+              className="w-full h-full object-contain"
             />
           </div>
         )}

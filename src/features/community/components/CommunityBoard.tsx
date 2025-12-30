@@ -37,6 +37,7 @@ interface Post {
   tag?: string;
   title: string;
   content: string;
+  imageUrl?: string;
   author: string;
   date: string;
   likes: number;
@@ -50,6 +51,7 @@ interface ApiPost {
   postTitle?: string;
   title?: string;
   content: string;
+  imageUrl?: string;
   authorName: string;
   createdAt: string;
   favorited: boolean;
@@ -186,6 +188,7 @@ export function CommunityBoard({
               id: item.id,
               title: item.postTitle || item.title || "제목 없음",
               content: item.content,
+              imageUrl: item.imageUrl,
               author: item.authorName,
               date: item.createdAt,
               likes: item.favorited ? 1 : 0,
@@ -312,6 +315,9 @@ export function CommunityBoard({
       >
         <CardHeader className="pb-3 flex flex-row justify-between items-start space-y-0">
           <div className="flex flex-col gap-2">
+            <CardTitle className="text-lg font-bold text-slate-900">
+              {communityName} 오픈채팅
+            </CardTitle>
             <div className="flex items-center gap-2">
               <Badge className="bg-red-500 hover:bg-red-600 border-none animate-pulse">
                 LIVE
@@ -320,9 +326,6 @@ export function CommunityBoard({
                 <MessageSquare className="w-3 h-3 mr-1" /> {messages.length}개
               </span>
             </div>
-            <CardTitle className="text-lg font-bold text-slate-900">
-              {communityName} 오픈채팅
-            </CardTitle>
           </div>
 
           {isChatOpen && (
