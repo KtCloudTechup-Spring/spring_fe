@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, LogIn, LogOut } from "lucide-react";
-import { useAuth } from '@/features/auth/AuthContext'; 
+import { useAuth } from '@/features/auth/AuthContext';
+import { getCommunityByName } from '@/lib/constants/communities'; 
 
 interface ProfileCardProps {
   currentCommunityId?: number;
@@ -82,16 +83,22 @@ export default function ProfileCard({ currentCommunityId }: ProfileCardProps) {
         )}
 
         {/* 4. 커뮤니티/역할 뱃지 */}
-        {user && (
-          <div className="flex gap-2 mb-6">
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-              {user.communityName}
-            </span>
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-              {user.role}
-            </span>
-          </div>
-        )}
+        {user && (() => {
+          const community = getCommunityByName(user.communityName);
+          const bgColor = community?.bgColor || "bg-blue-500";
+          const textColor = community?.textColor || "text-white";
+
+          return (
+            <div className="flex gap-2 mb-6">
+              <span className={`text-xs ${bgColor} ${textColor} px-2 py-1 rounded-full font-semibold`}>
+                {user.communityName}
+              </span>
+              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                {user.role}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* 5. 버튼 */}
         <Button 

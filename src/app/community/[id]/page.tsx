@@ -3,17 +3,13 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import {
   MessageCircle,
-  ThumbsUp,
   User,
   ArrowLeft,
   Share2,
-  Send,
   Heart
 } from "lucide-react";
 import Link from "next/link";
@@ -90,7 +86,7 @@ export default function PostDetailPage() {
         // API 응답 데이터를 Post 인터페이스에 맞게 매핑
         const mappedPost: Post = {
           id: response.data.id,
-          title: response.data.postTitle || response.data.title,
+          title: response.data.postTitle,
           content: response.data.content,
           imageUrl: response.data.imageUrl,
           author: response.data.authorName,
@@ -297,27 +293,27 @@ export default function PostDetailPage() {
 
         {/* 헤더 */}
         <div className="p-6 pb-6 border-b border-slate-100">
-          <div className="flex items-start justify-between gap-3 mb-6">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight flex-1">
-              {post.title}
-            </h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight mb-3">
+            {post.title}
+          </h1>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 border border-slate-100">
+                <AvatarImage src={post.authorProfileImage} />
+                <AvatarFallback className="bg-slate-100">
+                  <User className="h-5 w-5 text-slate-400" />
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-semibold text-slate-900 text-sm">{post.author}</div>
+                <div className="text-xs text-slate-500">{post.date}</div>
+              </div>
+            </div>
             {post.communityId && (
               <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full whitespace-nowrap">
                 {getCommunityName(post.communityId)}
               </span>
             )}
-          </div>
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 border border-slate-100">
-              <AvatarImage src={post.authorProfileImage} />
-              <AvatarFallback className="bg-slate-100">
-                <User className="h-5 w-5 text-slate-400" />
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <div className="font-semibold text-slate-900 text-sm">{post.author}</div>
-              <div className="text-xs text-slate-500">{post.date}</div>
-            </div>
           </div>
         </div>
 

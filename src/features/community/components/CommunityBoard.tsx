@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +13,14 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Users, ArrowRight, X, Send } from "lucide-react";
+import { Users, ArrowRight, X, Send, MessageSquare } from "lucide-react";
 import PostCard from "@/features/posts/components/PostCard";
 
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
 import { jwtDecode } from "jwt-decode";
+import { getChatHistory, joinChatRoom, leaveChatRoom } from "@/lib/api/chat";
 
 const token =
   typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
@@ -42,6 +44,18 @@ interface Post {
   badgeColor?: string;
 }
 
+// API 응답 게시글 타입
+interface ApiPost {
+  id: number;
+  postTitle?: string;
+  title?: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+  favorited: boolean;
+  commentCount: number;
+}
+
 interface CommunityBoardProps {
   communityName: string;
   communityId: number;
@@ -58,6 +72,7 @@ interface ChatMessage {
 }
 
 interface JwtPayload {
+  userId: number;
   id: number;
   email: string;
   exp: number;
@@ -68,9 +83,13 @@ export function CommunityBoard({
   communityName,
   communityId,
 }: CommunityBoardProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isJoining, setIsJoining] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
 
   // 채팅
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -78,31 +97,66 @@ export function CommunityBoard({
   const [stompClient, setStompClient] = useState<Client | null>(null);
 
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const hasAutoJoined = useRef(false);
 
-  // 나가기 버튼
-  const handleLeaveChat = async () => {
-    await fetch(`/api/chat-rooms/${communityId}/leave`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+  // 채팅방 닫기 (단순 UI 닫기)
+  const handleCloseChat = () => {
     stompClient?.deactivate();
-    setMessages([]);
     setIsChatOpen(false);
+  };
+
+  // 채팅방 나가기 (완전히 퇴장 - 마이페이지 참여 목록에서도 제거)
+  const handleLeaveChat = async () => {
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    if (!confirm("채팅방을 나가시겠습니까?")) {
+      return;
+    }
+
+    setIsLeaving(true);
+    try {
+      await leaveChatRoom(communityId);
+      stompClient?.deactivate();
+      setIsChatOpen(false);
+
+      // 마이페이지 채팅 목록 갱신을 위한 이벤트 발생
+      window.dispatchEvent(new CustomEvent('chatRoomLeft', {
+        detail: { communityId }
+      }));
+
+      // openChat 쿼리 파라미터가 있으면 제거하고 뒤로 가기
+      const openChat = searchParams.get('openChat');
+      if (openChat === 'true') {
+        router.back();
+      }
+    } catch (error) {
+      console.error("채팅방 나가기 실패:", error);
+      alert("채팅방 나가기에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsLeaving(false);
+    }
   };
 
   // 입장하기 버튼
   const handleEnterChat = async () => {
-    await fetch(`/api/chat-rooms/${communityId}/join`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
 
-    setIsChatOpen(true); // 이후 STOMP 연결됨
+    setIsJoining(true);
+    try {
+      await joinChatRoom(communityId);
+      setIsChatOpen(true); // 이후 STOMP 연결됨
+    } catch (error) {
+      console.error("채팅방 입장 실패:", error);
+      alert("채팅방 입장에 실패했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsJoining(false);
+    }
   };
 
   // 게시글 목록 불러오기
@@ -126,7 +180,7 @@ export function CommunityBoard({
           const postList = result.data?.content || [];
 
           // API 응답 필드를 컴포넌트가 요구하는 Post 인터페이스로 매핑
-          const mappedPosts: Post[] = postList.map((item: any) => {
+          const mappedPosts: Post[] = postList.map((item: ApiPost) => {
             console.log("API 응답 데이터:", item);
             return {
               id: item.id,
@@ -151,29 +205,37 @@ export function CommunityBoard({
     fetchPosts();
   }, [communityId]);
 
-  // 채팅 메시지
+  // 초기 채팅 히스토리 불러오기 (메시지 개수 표시용)
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      try {
+        const data = await getChatHistory(communityId);
+        setMessages(data);
+      } catch (error) {
+        console.error("채팅 히스토리 조회 실패:", error);
+        // 히스토리 조회 실패는 사용자에게 알리지 않고 빈 배열 유지
+      }
+    };
+
+    fetchChatHistory();
+  }, [communityId]);
+
+  // URL 쿼리 파라미터로 채팅방 자동 열기
+  useEffect(() => {
+    const openChat = searchParams.get('openChat');
+    if (openChat === 'true' && !isChatOpen && !hasAutoJoined.current) {
+      // 채팅방 자동 입장 (한 번만 실행)
+      hasAutoJoined.current = true;
+      handleEnterChat();
+    }
+  }, [searchParams, isChatOpen]);
+
+  // STOMP 연결 (채팅방 열렸을 때만)
   useEffect(() => {
     if (!isChatOpen) return;
 
     const token = localStorage.getItem("accessToken");
     if (!token) return;
-
-    const fetchChatHistory = async () => {
-      const token = localStorage.getItem("accessToken");
-
-      const res = await fetch(`/api/chat/${communityId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-      if (res.ok) {
-        const data: ChatMessage[] = await res.json();
-        setMessages(data); // 초기 채팅 세팅
-      }
-    };
-
-    fetchChatHistory();
 
     const client = new Client({
       webSocketFactory: () => new SockJS("http://localhost:8080/ws-stomp"),
@@ -228,7 +290,7 @@ export function CommunityBoard({
     el.scrollTop = el.scrollHeight;
   }, [messages]); //  messages 배열에 새 메시지가 추가될 때마다 자동 실행됨
 
-  const handleKeyDown = (e: any) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
       console.log("엔터");
       sendMessage();
@@ -255,7 +317,7 @@ export function CommunityBoard({
                 LIVE
               </Badge>
               <span className="text-xs text-slate-600 font-bold flex items-center bg-white px-2 py-1 rounded-full shadow-sm border border-slate-100">
-                <Users className="w-3 h-3 mr-1" /> 128명
+                <MessageSquare className="w-3 h-3 mr-1" /> {messages.length}개
               </span>
             </div>
             <CardTitle className="text-lg font-bold text-slate-900">
@@ -264,31 +326,37 @@ export function CommunityBoard({
           </div>
 
           {isChatOpen && (
-            <Button onClick={handleLeaveChat} variant="destructive">
-              채팅방 나가기
-            </Button>
-          )}
-
-          {isChatOpen && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsChatOpen(false)}
-              className="h-8 w-8 -mt-1 -mr-2"
-            >
-              <X className="w-4 h-4 text-slate-400 hover:text-slate-900" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleLeaveChat}
+                variant="ghost"
+                size="sm"
+                className="h-8 text-slate-600 hover:text-red-600 hover:bg-red-50"
+                disabled={isLeaving}
+              >
+                {isLeaving ? "나가는 중..." : "채팅방 나가기"}
+              </Button>
+              <div className="h-4 w-px bg-slate-300" />
+              <Button
+                onClick={handleCloseChat}
+                variant="ghost"
+                size="sm"
+                className="h-8 text-slate-600 hover:text-slate-900"
+              >
+                닫기
+              </Button>
+            </div>
           )}
         </CardHeader>
 
-        <CardContent className="flex-1 pb-3 flex flex-col">
+        <CardContent className="flex-1 pb-2 flex flex-col">
           {isChatOpen ? (
             <div className="flex-1 flex flex-col justify-between animate-in fade-in duration-500">
               <div
                 ref={chatScrollRef}
-                className="bg-slate-50 rounded-lg p-3 flex-1 mb-3 border border-slate-100 overflow-y-auto max-h-[300px]"
+                className="bg-slate-50 rounded-lg p-3 pb-2 flex-1 mb-1 border border-slate-100 overflow-y-auto max-h-[500px]"
               >
-                <div className="space-y-4 text-sm">
+                <div className="space-y-3 text-sm">
                   {messages.map((msg, idx) => {
                     const isMine = msg.senderId === myUserId;
                     return (
@@ -303,13 +371,13 @@ export function CommunityBoard({
                           <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
                         )}
 
-                        <div className={isMine ? "text-right" : "text-left"}>
-                          <span className="text-xs text-slate-500 block mb-1">
+                        <div className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
+                          <span className="text-xs text-slate-500 mb-1">
                             {msg.senderName}
                           </span>
 
                           <div
-                            className={`p-2 max-w-xs shadow-sm border ${
+                            className={`p-2 max-w-xs shadow-sm border inline-block ${
                               isMine
                                 ? "bg-slate-900 text-white rounded-bl-lg rounded-t-lg"
                                 : "bg-white text-slate-700 rounded-br-lg rounded-t-lg"
@@ -369,8 +437,15 @@ export function CommunityBoard({
             <Button
               onClick={handleEnterChat}
               className="w-full bg-white text-slate-900 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 font-bold shadow-sm group-hover:border-slate-900 transition-colors"
+              disabled={isJoining}
             >
-              입장하기 <ArrowRight className="w-4 h-4 ml-1" />
+              {isJoining ? (
+                "입장 중..."
+              ) : (
+                <>
+                  입장하기 <ArrowRight className="w-4 h-4 ml-1" />
+                </>
+              )}
             </Button>
           </CardFooter>
         )}
