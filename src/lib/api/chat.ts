@@ -23,7 +23,10 @@ export const getChatHistory = async (communityId: string | number): Promise<Chat
     throw new Error('Failed to fetch chat history');
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // 백엔드 응답이 { data: [...] } 형식일 수 있으므로 처리
+  return result.data || result || [];
 };
 
 // 채팅방 입장
@@ -58,6 +61,32 @@ export const leaveChatRoom = async (communityId: string | number): Promise<void>
   if (!response.ok) {
     throw new Error('Failed to leave chat room');
   }
+};
+
+// 채팅방 참여자 정보 타입
+export interface ChatUserParticipant {
+  chattingRoomId: number;
+  userId: number;
+  userName: string;
+}
+
+// 채팅방 참여자 목록 조회
+export const getChatParticipants = async (communityId: string | number): Promise<ChatUserParticipant[]> => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
+
+  const response = await fetch(`/api/chat/${communityId}/participant`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch chat participants');
+  }
+
+  const result = await response.json();
+  return result.data || result || [];
 };
 
 // 백엔드 API 응답 타입

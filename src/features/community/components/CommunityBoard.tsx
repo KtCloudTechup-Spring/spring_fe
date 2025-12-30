@@ -20,7 +20,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
 import { jwtDecode } from "jwt-decode";
-import { getChatHistory, joinChatRoom, leaveChatRoom } from "@/lib/api/chat";
+import { getChatHistory, joinChatRoom, leaveChatRoom, getChatParticipants } from "@/lib/api/chat";
 
 const token =
   typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
@@ -97,6 +97,7 @@ export function CommunityBoard({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [stompClient, setStompClient] = useState<Client | null>(null);
+  const [participantCount, setParticipantCount] = useState(0);
 
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const hasAutoJoined = useRef(false);
@@ -208,12 +209,13 @@ export function CommunityBoard({
     fetchPosts();
   }, [communityId]);
 
-  // 초기 채팅 히스토리 불러오기 (메시지 개수 표시용)
+  // 초기 채팅 히스토리 불러오기
   useEffect(() => {
     const fetchChatHistory = async () => {
       try {
         const data = await getChatHistory(communityId);
-        setMessages(data);
+        // 최근 50개의 메시지만 표시
+        setMessages(data.slice(-50));
       } catch (error) {
         console.error("채팅 히스토리 조회 실패:", error);
         // 히스토리 조회 실패는 사용자에게 알리지 않고 빈 배열 유지
@@ -221,6 +223,26 @@ export function CommunityBoard({
     };
 
     fetchChatHistory();
+  }, [communityId]);
+
+  // 채팅방 참여자 수 조회
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const participants = await getChatParticipants(communityId);
+        setParticipantCount(participants.length);
+      } catch (error) {
+        console.error("참여자 조회 실패:", error);
+        setParticipantCount(0);
+      }
+    };
+
+    fetchParticipants();
+
+    // 5초마다 참여자 수 갱신
+    const interval = setInterval(fetchParticipants, 5000);
+
+    return () => clearInterval(interval);
   }, [communityId]);
 
   // URL 쿼리 파라미터로 채팅방 자동 열기
@@ -253,7 +275,11 @@ export function CommunityBoard({
           console.log("클라이언트 sub");
           console.log(message.body);
           const body: ChatMessage = JSON.parse(message.body);
-          setMessages((prev) => [...prev, body]);
+          setMessages((prev) => {
+            const newMessages = [...prev, body];
+            // 최근 50개의 메시지만 유지
+            return newMessages.slice(-50);
+          });
         });
       },
       onStompError: (frame) => {
@@ -323,7 +349,7 @@ export function CommunityBoard({
                 LIVE
               </Badge>
               <span className="text-xs text-slate-600 font-bold flex items-center bg-white px-2 py-1 rounded-full shadow-sm border border-slate-100">
-                <MessageSquare className="w-3 h-3 mr-1" /> {messages.length}개
+                <Users className="w-3 h-3 mr-1" /> {participantCount}명
               </span>
             </div>
           </div>
