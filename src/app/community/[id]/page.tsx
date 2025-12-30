@@ -20,6 +20,7 @@ import {
   updateComment,
   deleteComment,
 } from "@/lib/api/comments";
+import { ShareToChatModal } from "@/components/ShareToChatModal";
 
 interface Post {
   id: number;
@@ -57,6 +58,7 @@ export default function PostDetailPage() {
   const [comment, setComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const getCommunityName = (communityId?: number) => {
     if (!communityId) return null;
@@ -204,8 +206,7 @@ export default function PostDetailPage() {
   };
 
   const handleShareToChat = () => {
-    // 채팅방 공유 로직이 들어갈 자리
-    alert(`📢 [핵심 기능] 게시글 ${postId}번을 채팅방으로 공유합니다!`);
+    setIsShareModalOpen(true);
   };
 
   const handleSubmitComment = async () => {
@@ -468,6 +469,15 @@ export default function PostDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 채팅방 공유 모달 */}
+      <ShareToChatModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        postId={post.id}
+        postTitle={post.title}
+        defaultCommunityId={post.communityId}
+      />
 
     </main>
   );

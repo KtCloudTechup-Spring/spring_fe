@@ -27,7 +27,8 @@
       "Bash(if exist \".next\\\\dev\\\\lock\" del \".next\\\\dev\\\\lock\")",
       "Bash(Get-Process)",
       "Bash(Where-Object {$_ProcessName -like \"*node*\"})",
-      "Bash(Select-Object Id, ProcessName, Path)"
+      "Bash(Select-Object Id, ProcessName, Path)",
+      "Bash(npx shadcn@latest add:*)"
     ]
   }
 }
