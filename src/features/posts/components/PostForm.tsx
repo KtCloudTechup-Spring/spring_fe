@@ -148,7 +148,7 @@ function PostFormContent() {
       }
 
       // 4. API 호출
-      const response = await fetch("/api/posts", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

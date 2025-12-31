@@ -32,7 +32,7 @@ export default function RecentPostList() {
 
         // 모든 커뮤니티의 게시글을 병렬로 가져오기
         const fetchPromises = communityIds.map((id) =>
-          fetch(`/api/posts/community/${id}`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts/community/${id}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",

@@ -88,7 +88,7 @@ export default function PostDetailPage() {
         // API 응답 데이터를 Post 인터페이스에 맞게 매핑
         const mappedPost: Post = {
           id: response.data.id,
-          title: response.data.postTitle,
+          title: response.data.title,
           content: response.data.content,
           imageUrl: response.data.imageUrl,
           author: response.data.authorName,

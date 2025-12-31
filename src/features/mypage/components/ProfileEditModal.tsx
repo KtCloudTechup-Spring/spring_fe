@@ -63,7 +63,7 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
 
         console.log("프로필 사진 업로드 시작");
 
-        const imageResponse = await fetch("${process.env.NEXT_PUBLIC_API_URL}/api/profile/avatar", {
+        const imageResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/avatar`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -85,15 +85,19 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
           throw new Error(errorData.message || "프로필 사진 업로드에 실패했습니다.");
         }
 
-        const successData = await imageResponse.json();
-        console.log("프로필 사진 업로드 성공:", successData);
+        const imageData = await imageResponse.json();
+        console.log("프로필 사진 업로드 성공:", imageData);
+
+        // 업로드 성공 후 바로 사용자 정보 새로고침
+        console.log("프로필 사진 업로드 후 사용자 정보 새로고침");
+        await refreshUser();
       }
 
       // 2. 닉네임 수정
       if (nickname !== user?.name) {
         console.log("닉네임 변경 요청:", { name: nickname });
 
-        const nicknameResponse = await fetch("${process.env.NEXT_PUBLIC_API_URL}/api/profile/change-profile", {
+        const nicknameResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/change-profile`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -116,20 +120,19 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
           throw new Error(errorData.message || "닉네임 변경에 실패했습니다.");
         }
 
-        const successData = await nicknameResponse.json();
-        console.log("닉네임 변경 성공:", successData);
+        const nicknameData = await nicknameResponse.json();
+        console.log("닉네임 변경 성공:", nicknameData);
+
+        // 닉네임 변경 후 사용자 정보 새로고침
+        console.log("닉네임 변경 후 사용자 정보 새로고침");
+        await refreshUser();
       }
 
-      // 3. 사용자 정보 새로고침
-      console.log("사용자 정보 새로고침 시작");
-      await refreshUser();
-      console.log("사용자 정보 새로고침 완료");
-
-      // 4. 모달 닫기 및 상태 초기화
+      // 3. 모달 닫기 및 상태 초기화
       resetForm();
       onClose();
 
-      // 5. 페이지 새로고침 (임시 - 디버깅용)
+      // 4. 페이지 새로고침하여 모든 컴포넌트에 변경사항 반영
       window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "프로필 수정에 실패했습니다.");
