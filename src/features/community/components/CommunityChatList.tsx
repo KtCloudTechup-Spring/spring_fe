@@ -21,7 +21,7 @@ import {
 import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
 import { COMMUNITIES } from "@/lib/constants/communities";
-import { getChatHistory } from "@/lib/api/chat";
+import { getChatHistory, getChatParticipants } from "@/lib/api/chat";
 
 // 채팅방 데이터 타입 정의
 interface ChatRoomData {
@@ -32,7 +32,7 @@ interface ChatRoomData {
   iconBgColor: string;
   lastMessage?: string;
   lastMessageTime?: string;
-  messageCount: number;
+  participantCount: number;
 }
 
 // 커뮤니티 아이콘 매핑
@@ -100,8 +100,11 @@ export default function CommunityChatList() {
       const chatData: ChatRoomData[] = await Promise.all(
         COMMUNITIES.map(async (community) => {
           try {
-            // 각 커뮤니티의 채팅 히스토리 조회
-            const messages = await getChatHistory(community.id);
+            // 각 커뮤니티의 채팅 히스토리 및 참여자 조회
+            const [messages, participants] = await Promise.all([
+              getChatHistory(community.id),
+              getChatParticipants(community.id)
+            ]);
 
             // 최근 메시지 가져오기
             const lastMessage = messages.length > 0
@@ -120,7 +123,7 @@ export default function CommunityChatList() {
               iconBgColor: community.iconBgColor,
               lastMessage,
               lastMessageTime,
-              messageCount: messages.length,
+              participantCount: participants.length,
             };
           } catch (error) {
             // 에러 발생 시 기본값 반환
@@ -132,7 +135,7 @@ export default function CommunityChatList() {
               iconBgColor: community.iconBgColor,
               lastMessage: "채팅방에 입장해보세요!",
               lastMessageTime: undefined,
-              messageCount: 0,
+              participantCount: 0,
             };
           }
         })
@@ -226,8 +229,8 @@ export default function CommunityChatList() {
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-gray-600 bg-gray-100 px-2 py-1 rounded-full text-xs font-medium shrink-0">
-                        <MessageSquare className="w-3 h-3" />
-                        {room.messageCount}
+                        <Users className="w-3 h-3" />
+                        {room.participantCount}명
                       </div>
                     </div>
                   </div>

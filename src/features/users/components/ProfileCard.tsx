@@ -57,7 +57,7 @@ export default function ProfileCard({ currentCommunityId }: ProfileCardProps) {
         </button>
       )}
 
-      <CardContent className="flex flex-col items-center pt-8 pb-6 px-6">
+      <CardContent className="flex flex-col items-center pt-5 pb-5 px-4">
         
         {/* 1. 프로필 사진 */}
         <Avatar className={`w-20 h-20 mb-4 ring-4 ring-gray-50 ${user ? 'group-hover:ring-slate-200 transition-all' : ''}`}>

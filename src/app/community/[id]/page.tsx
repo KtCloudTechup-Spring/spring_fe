@@ -20,6 +20,7 @@ import {
   updateComment,
   deleteComment,
 } from "@/lib/api/comments";
+import { ShareToChatModal } from "@/components/ShareToChatModal";
 
 interface Post {
   id: number;
@@ -57,6 +58,7 @@ export default function PostDetailPage() {
   const [comment, setComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const getCommunityName = (communityId?: number) => {
     if (!communityId) return null;
@@ -86,7 +88,7 @@ export default function PostDetailPage() {
         // API 응답 데이터를 Post 인터페이스에 맞게 매핑
         const mappedPost: Post = {
           id: response.data.id,
-          title: response.data.postTitle,
+          title: response.data.title || response.data.postTitle,
           content: response.data.content,
           imageUrl: response.data.imageUrl,
           author: response.data.authorName,
@@ -94,7 +96,7 @@ export default function PostDetailPage() {
           date: new Date(response.data.createdAt).toLocaleDateString('ko-KR'),
           likes: response.data.favoriteCount,
           isLiked: response.data.favorited,
-          commentCount: response.data.commentCnt,
+          commentCount: response.data.commentCnt || response.data.commentCount,
           communityId: response.data.communityId,
         };
 
@@ -204,8 +206,7 @@ export default function PostDetailPage() {
   };
 
   const handleShareToChat = () => {
-    // 채팅방 공유 로직이 들어갈 자리
-    alert(`📢 [핵심 기능] 게시글 ${postId}번을 채팅방으로 공유합니다!`);
+    setIsShareModalOpen(true);
   };
 
   const handleSubmitComment = async () => {
@@ -293,20 +294,20 @@ export default function PostDetailPage() {
 
         {/* 헤더 */}
         <div className="p-6 pb-6 border-b border-slate-100">
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight mb-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 leading-tight mb-5">
             {post.title}
           </h1>
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 border border-slate-100">
+            <div className="flex items-center gap-2.5">
+              <Avatar className="h-8 w-8 border border-slate-100">
                 <AvatarImage src={post.authorProfileImage} />
                 <AvatarFallback className="bg-slate-100">
-                  <User className="h-5 w-5 text-slate-400" />
+                  <User className="h-4 w-4 text-slate-400" />
                 </AvatarFallback>
               </Avatar>
               <div>
-                <div className="font-semibold text-slate-900 text-sm">{post.author}</div>
-                <div className="text-xs text-slate-500">{post.date}</div>
+                <div className="font-medium text-slate-900 text-xs">{post.author}</div>
+                <div className="text-[11px] text-slate-500">{post.date}</div>
               </div>
             </div>
             {post.communityId && (
@@ -468,6 +469,15 @@ export default function PostDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 채팅방 공유 모달 */}
+      <ShareToChatModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        postId={post.id}
+        postTitle={post.title}
+        defaultCommunityId={post.communityId}
+      />
 
     </main>
   );

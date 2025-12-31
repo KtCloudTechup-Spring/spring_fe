@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Heart, MessageSquare } from "lucide-react";
+import { COMMUNITIES } from "@/lib/constants/communities";
 
 // 데이터 타입 정의
 interface Post {
@@ -14,6 +15,8 @@ interface Post {
   date: string;
   likes: number;
   comments: number;
+  communityId: number;
+  imageUrl?: string;
 }
 
 export default function RecentPostList() {
@@ -42,6 +45,17 @@ export default function RecentPostList() {
 
         const responses = await Promise.all(fetchPromises);
 
+        // API 응답 구조 확인을 위한 로깅
+        console.log('=== API Response Structure ===');
+        console.log('First response:', responses.find(r => r && r.data?.content));
+        if (responses.find(r => r && r.data?.content)) {
+          const sampleContent = responses.find(r => r && r.data?.content)?.data?.content;
+          if (sampleContent && sampleContent.length > 0) {
+            console.log('Sample post item:', sampleContent[0]);
+            console.log('Available fields:', Object.keys(sampleContent[0]));
+          }
+        }
+
         // 모든 게시글을 하나의 배열로 합치기
         const allPosts = responses
           .filter((res) => res && res.data?.content)
@@ -65,6 +79,8 @@ export default function RecentPostList() {
           date: new Date(item.createdAt).toLocaleDateString("ko-KR"),
           likes: item.favoriteCount || 0,
           comments: item.commentCount || 0,
+          communityId: item.communityId,
+          imageUrl: item.imageUrl,
         }));
 
         setPosts(recentPosts);
@@ -107,35 +123,59 @@ export default function RecentPostList() {
       </h3>
 
       <div className="space-y-4">
-        {posts.map((post) => (
-          <Link key={post.id} href={`/community/${post.id}`}>
-            <Card className="overflow-hidden hover:border-slate-900 hover:shadow-md transition-all cursor-pointer border-gray-200 group bg-white">
-              {/* 내용 */}
-              <div className="flex flex-col justify-center p-6 w-full">
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-slate-900 transition-colors">
-                  {post.title}
-                </h3>
-                <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
-                  {post.desc}
-                </p>
+        {posts.map((post) => {
+          const community = COMMUNITIES.find(c => c.id === post.communityId);
 
-                <div className="flex items-center gap-3 text-xs text-gray-400">
-                  <span className="text-gray-700 font-medium">{post.author}</span>
-                  <span>·</span>
-                  <span>{post.date}</span>
-                  <div className="flex gap-2 ml-auto sm:ml-2">
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-3 h-3" /> {post.likes}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" /> {post.comments}
-                    </span>
+          return (
+            <Link key={post.id} href={`/community/${post.id}`}>
+              <Card className="overflow-hidden hover:border-slate-900 hover:shadow-md transition-all cursor-pointer border-gray-200 group bg-white">
+                <div className="flex gap-4 p-6">
+                  {/* 내용 */}
+                  <div className="flex flex-col justify-center flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-slate-900 transition-colors">
+                        {post.title}
+                      </h3>
+                      {community && (
+                        <span className={`text-xs ${community.bgColor} ${community.textColor} px-2.5 py-1 rounded-full whitespace-nowrap`}>
+                          {community.name}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
+                      {post.desc}
+                    </p>
+
+                    <div className="flex items-center gap-3 text-xs text-gray-400">
+                      <span className="text-gray-700 font-medium">{post.author}</span>
+                      <span>·</span>
+                      <span>{post.date}</span>
+                      <div className="flex gap-2 ml-auto sm:ml-2">
+                        <span className="flex items-center gap-1">
+                          <Heart className="w-3 h-3" /> {post.likes}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" /> {post.comments}
+                        </span>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* 썸네일 이미지 */}
+                  {post.imageUrl && (
+                    <div className="w-32 h-32 shrink-0">
+                      <img
+                        src={post.imageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Card>
-          </Link>
-        ))}
+              </Card>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

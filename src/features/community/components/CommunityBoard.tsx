@@ -20,7 +20,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
 import { jwtDecode } from "jwt-decode";
-import { getChatHistory, joinChatRoom, leaveChatRoom } from "@/lib/api/chat";
+import { getChatHistory, joinChatRoom, leaveChatRoom, getChatParticipants } from "@/lib/api/chat";
 
 const token =
   typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
@@ -37,6 +37,7 @@ interface Post {
   tag?: string;
   title: string;
   content: string;
+  imageUrl?: string;
   author: string;
   date: string;
   likes: number;
@@ -50,6 +51,7 @@ interface ApiPost {
   postTitle?: string;
   title?: string;
   content: string;
+  imageUrl?: string;
   authorName: string;
   createdAt: string;
   favorited: boolean;
@@ -95,9 +97,35 @@ export function CommunityBoard({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [stompClient, setStompClient] = useState<Client | null>(null);
+  const [participantCount, setParticipantCount] = useState(0);
 
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const hasAutoJoined = useRef(false);
+
+  // URL을 링크로 변환하는 함수
+  const linkifyText = (text: string) => {
+    // URL 패턴 정규식
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlPattern);
+
+    return parts.map((part, index) => {
+      if (part.match(urlPattern)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline break-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
 
   // 채팅방 닫기 (단순 UI 닫기)
   const handleCloseChat = () => {
@@ -186,6 +214,7 @@ export function CommunityBoard({
               id: item.id,
               title: item.postTitle || item.title || "제목 없음",
               content: item.content,
+              imageUrl: item.imageUrl,
               author: item.authorName,
               date: item.createdAt,
               likes: item.favorited ? 1 : 0,
@@ -205,12 +234,13 @@ export function CommunityBoard({
     fetchPosts();
   }, [communityId]);
 
-  // 초기 채팅 히스토리 불러오기 (메시지 개수 표시용)
+  // 초기 채팅 히스토리 불러오기
   useEffect(() => {
     const fetchChatHistory = async () => {
       try {
         const data = await getChatHistory(communityId);
-        setMessages(data);
+        // 최근 50개의 메시지만 표시
+        setMessages(data.slice(-50));
       } catch (error) {
         console.error("채팅 히스토리 조회 실패:", error);
         // 히스토리 조회 실패는 사용자에게 알리지 않고 빈 배열 유지
@@ -220,15 +250,84 @@ export function CommunityBoard({
     fetchChatHistory();
   }, [communityId]);
 
+  // 채팅방 참여자 수 조회
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const participants = await getChatParticipants(communityId);
+        setParticipantCount(participants.length);
+      } catch (error) {
+        console.error("참여자 조회 실패:", error);
+        setParticipantCount(0);
+      }
+    };
+
+    fetchParticipants();
+
+    // 5초마다 참여자 수 갱신
+    const interval = setInterval(fetchParticipants, 5000);
+
+    return () => clearInterval(interval);
+  }, [communityId]);
+
   // URL 쿼리 파라미터로 채팅방 자동 열기
   useEffect(() => {
     const openChat = searchParams.get('openChat');
+
     if (openChat === 'true' && !isChatOpen && !hasAutoJoined.current) {
       // 채팅방 자동 입장 (한 번만 실행)
       hasAutoJoined.current = true;
       handleEnterChat();
     }
   }, [searchParams, isChatOpen]);
+
+  // CustomEvent 리스너 - 공유 요청 처리
+  useEffect(() => {
+    const handleChatShareRequest = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { postId, postTitle, communityId: targetCommunityId } = customEvent.detail;
+
+      // 현재 커뮤니티와 타겟 커뮤니티가 일치하고 채팅이 열려있으며 STOMP 연결이 있을 때만 전송
+      if (targetCommunityId === communityId && isChatOpen && stompClient && stompClient.connected) {
+        // 중복 전송 방지
+        const shareKey = `shared_${postId}_${communityId}`;
+        const lastShared = localStorage.getItem(shareKey);
+        const now = Date.now();
+
+        if (lastShared && now - parseInt(lastShared) < 10 * 60 * 1000) {
+          console.log('중복 공유 방지: 최근에 이미 공유된 게시글입니다.');
+          return;
+        }
+
+        // 공유 메시지 생성 및 전송
+        const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
+
+        console.log('백그라운드 공유 메시지 전송:', shareMessage);
+
+        setTimeout(() => {
+          try {
+            stompClient.publish({
+              destination: `/pub/chat/${communityId}`,
+              body: JSON.stringify({
+                content: shareMessage,
+              }),
+            });
+
+            console.log('✅ 백그라운드 메시지 전송 완료');
+            localStorage.setItem(shareKey, now.toString());
+          } catch (error) {
+            console.error('❌ 백그라운드 메시지 전송 실패:', error);
+          }
+        }, 100);
+      }
+    };
+
+    window.addEventListener('chatShareRequest', handleChatShareRequest);
+
+    return () => {
+      window.removeEventListener('chatShareRequest', handleChatShareRequest);
+    };
+  }, [communityId, isChatOpen, stompClient]);
 
   // STOMP 연결 (채팅방 열렸을 때만)
   useEffect(() => {
@@ -250,8 +349,58 @@ export function CommunityBoard({
           console.log("클라이언트 sub");
           console.log(message.body);
           const body: ChatMessage = JSON.parse(message.body);
-          setMessages((prev) => [...prev, body]);
+          setMessages((prev) => {
+            const newMessages = [...prev, body];
+            // 최근 50개의 메시지만 유지
+            return newMessages.slice(-50);
+          });
         });
+
+        // STOMP 연결 성공 후 pendingChatShare 확인
+        const pendingShare = localStorage.getItem('pendingChatShare');
+        if (pendingShare) {
+          try {
+            const shareRequest = JSON.parse(pendingShare);
+
+            // 현재 커뮤니티와 일치하면 메시지 전송
+            if (shareRequest.communityId === communityId) {
+              const { postId, postTitle } = shareRequest;
+
+              // 중복 전송 방지
+              const shareKey = `shared_${postId}_${communityId}`;
+              const lastShared = localStorage.getItem(shareKey);
+              const now = Date.now();
+
+              if (!lastShared || now - parseInt(lastShared) >= 10 * 60 * 1000) {
+                const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
+
+                console.log('pending 공유 메시지 전송:', shareMessage);
+
+                setTimeout(() => {
+                  try {
+                    client.publish({
+                      destination: `/pub/chat/${communityId}`,
+                      body: JSON.stringify({
+                        content: shareMessage,
+                      }),
+                    });
+
+                    console.log('✅ pending 메시지 전송 완료');
+                    localStorage.setItem(shareKey, now.toString());
+                    localStorage.removeItem('pendingChatShare');
+                  } catch (error) {
+                    console.error('❌ pending 메시지 전송 실패:', error);
+                  }
+                }, 500);
+              } else {
+                localStorage.removeItem('pendingChatShare');
+              }
+            }
+          } catch (error) {
+            console.error('pendingChatShare 파싱 실패:', error);
+            localStorage.removeItem('pendingChatShare');
+          }
+        }
       },
       onStompError: (frame) => {
         console.error("❌ STOMP 에러", frame);
@@ -312,17 +461,17 @@ export function CommunityBoard({
       >
         <CardHeader className="pb-3 flex flex-row justify-between items-start space-y-0">
           <div className="flex flex-col gap-2">
+            <CardTitle className="text-lg font-bold text-slate-900">
+              {communityName} 오픈채팅
+            </CardTitle>
             <div className="flex items-center gap-2">
               <Badge className="bg-red-500 hover:bg-red-600 border-none animate-pulse">
                 LIVE
               </Badge>
               <span className="text-xs text-slate-600 font-bold flex items-center bg-white px-2 py-1 rounded-full shadow-sm border border-slate-100">
-                <MessageSquare className="w-3 h-3 mr-1" /> {messages.length}개
+                <Users className="w-3 h-3 mr-1" /> {participantCount}명
               </span>
             </div>
-            <CardTitle className="text-lg font-bold text-slate-900">
-              {communityName} 오픈채팅
-            </CardTitle>
           </div>
 
           {isChatOpen && (
@@ -377,13 +526,13 @@ export function CommunityBoard({
                           </span>
 
                           <div
-                            className={`p-2 max-w-xs shadow-sm border inline-block ${
+                            className={`p-2 max-w-xs shadow-sm border inline-block whitespace-pre-line ${
                               isMine
                                 ? "bg-slate-900 text-white rounded-bl-lg rounded-t-lg"
                                 : "bg-white text-slate-700 rounded-br-lg rounded-t-lg"
                             }`}
                           >
-                            {msg.content}
+                            {linkifyText(msg.content)}
                           </div>
                         </div>
 
