@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiPost } from "@/lib/api";
 import { useAuth } from "@/features/auth/AuthContext";
-import type { LoginFormData, LoginErrors, LoginResponse } from "@/types/auth";
+import type { LoginFormData, LoginErrors } from "@/types/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -76,8 +76,9 @@ export function useLoginForm() {
         throw new Error("토큰을 받지 못했습니다.");
       }
 
-      // 사용자 정보 추출
-      const { accessToken: _, token: __, data, ...userData } = response;
+      // 사용자 정보 추출 (accessToken과 token 필드 제외)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { accessToken: _unused1, token: _unused2, data, ...userData } = response;
 
       // data 필드가 있으면 그 안에 사용자 정보가 있을 수 있음
       const finalUserData = data || userData;

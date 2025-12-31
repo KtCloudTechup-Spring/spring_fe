@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  Users,
   MessageSquare,
   ChevronLeft,
   ChevronRight,
@@ -18,10 +16,10 @@ import {
   Palette,
   Lightbulb,
 } from "lucide-react";
-import Link from "next/link";
 import useEmblaCarousel from "embla-carousel-react";
 import { COMMUNITIES } from "@/lib/constants/communities";
 import { getChatHistory, getChatParticipants } from "@/lib/api/chat";
+import ChatRoomCard from "./ChatRoomCard";
 
 // 채팅방 데이터 타입 정의
 interface ChatRoomData {
@@ -125,7 +123,7 @@ export default function CommunityChatList() {
               lastMessageTime,
               participantCount: participants.length,
             };
-          } catch (error) {
+          } catch {
             // 에러 발생 시 기본값 반환
             return {
               id: community.id,
@@ -211,48 +209,18 @@ export default function CommunityChatList() {
           {chatRooms.map((room) => {
             const IconComponent = communityIcons[room.id];
             return (
-              <Link
+              <ChatRoomCard
                 key={room.id}
-                href={`/community?category=${room.id}&openChat=true`}
-                className="flex-[0_0_100%] md:flex-[0_0_calc(33.333%-0.67rem)] min-w-0"
-              >
-                <Card className="overflow-hidden hover:shadow-lg transition-all border-gray-200 group h-full flex flex-col hover:-translate-y-1 duration-300 cursor-pointer">
-                  {/* 상단: 헤더 */}
-                  <div className="bg-white px-5 py-4 border-b border-gray-100">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className={`${room.iconBgColor} p-2 rounded-lg shrink-0`}>
-                          {IconComponent && <IconComponent className="w-5 h-5 text-white" />}
-                        </div>
-                        <span className={`${room.bgColor} ${room.textColor} px-3 py-1 rounded-full text-sm font-bold truncate`}>
-                          {room.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-600 bg-gray-100 px-2 py-1 rounded-full text-xs font-medium shrink-0">
-                        <Users className="w-3 h-3" />
-                        {room.participantCount}명
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 하단: 최근 메시지 */}
-                  <CardContent className="p-5 flex flex-col flex-1 bg-white">
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-slate-700 line-clamp-2 leading-relaxed">
-                          {room.lastMessage}
-                        </p>
-                        {room.lastMessageTime && (
-                          <p className="text-xs text-slate-400 mt-1">
-                            {getTimeAgo(room.lastMessageTime)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                id={room.id}
+                name={room.name}
+                bgColor={room.bgColor}
+                textColor={room.textColor}
+                iconBgColor={room.iconBgColor}
+                lastMessage={room.lastMessage}
+                lastMessageTime={room.lastMessageTime ? getTimeAgo(room.lastMessageTime) : undefined}
+                participantCount={room.participantCount}
+                IconComponent={IconComponent}
+              />
             );
           })}
         </div>

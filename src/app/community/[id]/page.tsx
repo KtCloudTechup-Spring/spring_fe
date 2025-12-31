@@ -88,7 +88,7 @@ export default function PostDetailPage() {
         // API 응답 데이터를 Post 인터페이스에 맞게 매핑
         const mappedPost: Post = {
           id: response.data.id,
-          title: response.data.title || response.data.postTitle,
+          title: response.data.postTitle,
           content: response.data.content,
           imageUrl: response.data.imageUrl,
           author: response.data.authorName,
@@ -96,7 +96,7 @@ export default function PostDetailPage() {
           date: new Date(response.data.createdAt).toLocaleDateString('ko-KR'),
           likes: response.data.favoriteCount,
           isLiked: response.data.favorited,
-          commentCount: response.data.commentCnt || response.data.commentCount,
+          commentCount: response.data.commentCnt,
           communityId: response.data.communityId,
         };
 

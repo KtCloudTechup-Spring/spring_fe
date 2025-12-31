@@ -163,7 +163,7 @@ export default function RecentPostList() {
 
                   {/* 썸네일 이미지 */}
                   {post.imageUrl && (
-                    <div className="w-32 h-32 shrink-0">
+                    <div className="w-32 h-20 shrink-0">
                       <img
                         src={post.imageUrl}
                         alt={post.title}
