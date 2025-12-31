@@ -101,7 +101,7 @@ export default function Navigation() {
       if (selectedCommunity.id === 0) {
         const communityIds = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         const fetchPromises = communityIds.map((id) =>
-          fetch(`/api/posts/community/${id}?q=${encodeURIComponent(searchQuery)}`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts/community/${id}?q=${encodeURIComponent(searchQuery)}`, {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
@@ -128,7 +128,7 @@ export default function Navigation() {
       } else {
         // 특정 커뮤니티 검색
         const response = await fetch(
-          `/api/posts/community/${selectedCommunity.id}?q=${encodeURIComponent(searchQuery)}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/posts/community/${selectedCommunity.id}?q=${encodeURIComponent(searchQuery)}`,
           {
             method: "GET",
             headers: {
