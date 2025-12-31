@@ -83,9 +83,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // (2) 전체 URL로 변경: "http"가 없으면 백엔드 주소 붙이기
-      // 기본 이미지가 아닐 경우에만 적용
       if (!imgPath.startsWith("http") && imgPath !== "default.png") {
-        imgPath = `http://localhost:8080${imgPath}`;
+        imgPath = `${process.env.NEXT_PUBLIC_API_URL}${imgPath}`;
       }
 
       processedUser.profileImage = imgPath;
@@ -114,7 +113,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!storedToken) return;
 
     try {
-      const response = await fetch('/api/me', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/me`, {
         headers: {
           'Authorization': `Bearer ${storedToken}`,
         },
@@ -134,7 +133,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
 
           if (!imgPath.startsWith("http") && imgPath !== "default.png") {
-            imgPath = `http://localhost:8080${imgPath}`;
+            imgPath = `${process.env.NEXT_PUBLIC_API_URL}${imgPath}`;
           }
 
           processedUser.profileImage = imgPath;

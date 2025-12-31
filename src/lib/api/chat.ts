@@ -12,7 +12,7 @@ export interface ChatMessage {
 export const getChatHistory = async (communityId: string | number): Promise<ChatMessage[]> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
 
-  const response = await fetch(`/api/chat/${communityId}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/${communityId}`, {
     headers: {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -33,7 +33,7 @@ export const getChatHistory = async (communityId: string | number): Promise<Chat
 export const joinChatRoom = async (communityId: string | number): Promise<void> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
 
-  const response = await fetch(`/api/chat-rooms/${communityId}/join`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat-rooms/${communityId}/join`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +50,7 @@ export const joinChatRoom = async (communityId: string | number): Promise<void> 
 export const leaveChatRoom = async (communityId: string | number): Promise<void> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
 
-  const response = await fetch(`/api/chat-rooms/${communityId}/leave`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat-rooms/${communityId}/leave`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -74,7 +74,7 @@ export interface ChatUserParticipant {
 export const getChatParticipants = async (communityId: string | number): Promise<ChatUserParticipant[]> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
 
-  const response = await fetch(`/api/chat/${communityId}/participant`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/${communityId}/participant`, {
     headers: {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -107,7 +107,7 @@ export interface ChatParticipant {
 export const getMyChats = async (): Promise<ChatParticipant[]> => {
   const token = typeof window !== 'undefined' ? localStorage.getItem("accessToken") : null;
 
-  const response = await fetch(`/api/chat/me/participant`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/chat/me/participant`, {
     headers: {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),

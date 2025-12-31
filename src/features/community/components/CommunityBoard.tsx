@@ -50,7 +50,7 @@ export function CommunityBoard({
       setIsLoading(true);
       try {
         const token = localStorage.getItem("accessToken");
-        const requestUrl = `/api/posts/community/${communityId}`;
+        const requestUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/posts/community/${communityId}`;
 
         const response = await fetch(requestUrl, {
           method: "GET",

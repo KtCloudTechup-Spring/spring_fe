@@ -21,7 +21,7 @@ export default function MyPostsTab() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/profile/my-posts?page=${page}&size=10`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/my-posts?page=${page}&size=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

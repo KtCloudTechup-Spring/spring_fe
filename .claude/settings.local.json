@@ -31,7 +31,8 @@
       "Bash(npx shadcn@latest add:*)",
       "Bash(npx eslint:*)",
       "Bash(cat:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(grep:*)"
     ]
   }
 }

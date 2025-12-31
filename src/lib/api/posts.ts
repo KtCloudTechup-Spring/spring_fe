@@ -25,7 +25,7 @@ export interface PostDetailResponse {
     commentCnt: number;
     authorName: string;
     authorProfileImage: string;
-    postTitle: string;
+    title: string;
     content: string;
     imageUrl?: string;
     favoriteCount: number;
