@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, Upload, X, ImageIcon } from "lucide-react";
+import { ArrowLeft, Loader2, X, ImageIcon } from "lucide-react";
 import { useAuth } from "@/features/auth/AuthContext"; 
 
 const communities = [
@@ -143,7 +143,7 @@ function PostFormContent() {
       console.log("=== FormData 전송 내용 ===");
       console.log("Request Data:", requestData);
       console.log("Image File:", imageFile?.name || "없음");
-      for (let pair of formDataToSend.entries()) {
+      for (const pair of formDataToSend.entries()) {
         console.log(pair[0], pair[1]);
       }
 
@@ -182,7 +182,7 @@ function PostFormContent() {
         try {
           errorData = await response.json();
           console.error("500 에러 응답:", errorData);
-        } catch (e) {
+        } catch {
           const errorText = await response.text();
           console.error("500 에러 (텍스트):", errorText);
         }

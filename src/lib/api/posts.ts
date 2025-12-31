@@ -10,7 +10,7 @@ export interface GetPostsParams {
   courseId?: string;
 }
 
-export const getPosts = async (params?: GetPostsParams) => {
+export const getPosts = async () => {
   return apiGet<any>("/posts", {
     // params를 query string으로 변환하는 로직 필요시 추가
   });

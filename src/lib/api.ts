@@ -41,7 +41,7 @@ export async function apiFetch<T>(
         const text = await response.text();
         errorData = { message: text || `HTTP ${response.status}` };
       }
-    } catch (e) {
+    } catch {
       errorData = { message: `API 요청 실패: ${response.status}` };
     }
 

@@ -28,7 +28,10 @@
       "Bash(Get-Process)",
       "Bash(Where-Object {$_ProcessName -like \"*node*\"})",
       "Bash(Select-Object Id, ProcessName, Path)",
-      "Bash(npx shadcn@latest add:*)"
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx eslint:*)",
+      "Bash(cat:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }
