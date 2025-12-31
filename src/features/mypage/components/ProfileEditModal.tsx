@@ -63,7 +63,7 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
 
         console.log("프로필 사진 업로드 시작");
 
-        const imageResponse = await fetch("/api/profile/avatar", {
+        const imageResponse = await fetch("${process.env.NEXT_PUBLIC_API_URL}/api/profile/avatar", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -93,7 +93,7 @@ export default function ProfileEditModal({ isOpen, onClose }: ProfileEditModalPr
       if (nickname !== user?.name) {
         console.log("닉네임 변경 요청:", { name: nickname });
 
-        const nicknameResponse = await fetch("/api/profile/change-profile", {
+        const nicknameResponse = await fetch("${process.env.NEXT_PUBLIC_API_URL}/api/profile/change-profile", {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
