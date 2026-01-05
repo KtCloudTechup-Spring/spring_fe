@@ -1,8 +1,20 @@
-// 채팅 메시지 타입
+// 백엔드 API 응답 타입 (Swagger 응답)
+interface BackendChatMessage {
+  chattingRoomId?: number;
+  senderId: number;
+  senderEmail: string;
+  senderName: string;
+  content: string;
+  createdAt?: string;
+  userProfileImg?: string;
+}
+
+// 채팅 메시지 타입 (프론트엔드에서 사용)
 export interface ChatMessage {
   senderId: number;
   senderName: string;
   senderEmail: string;
+  senderProfileImage?: string;
   content: string;
   chattingRoomId: number;
   createdAt?: string;
@@ -25,8 +37,18 @@ export const getChatHistory = async (communityId: string | number): Promise<Chat
 
   const result = await response.json();
 
-  // 백엔드 응답이 { data: [...] } 형식일 수 있으므로 처리
-  return result.data || result || [];
+  // 백엔드 응답을 프론트엔드 타입으로 변환
+  const backendMessages: BackendChatMessage[] = result.data || result || [];
+
+  return backendMessages.map((msg) => ({
+    senderId: msg.senderId,
+    senderName: msg.senderName,
+    senderEmail: msg.senderEmail,
+    senderProfileImage: msg.userProfileImg, // userProfileImg → senderProfileImage 변환
+    content: msg.content,
+    chattingRoomId: msg.chattingRoomId || 0,
+    createdAt: msg.createdAt,
+  }));
 };
 
 // 채팅방 입장

@@ -32,7 +32,8 @@
       "Bash(npx eslint:*)",
       "Bash(cat:*)",
       "Bash(npm run build:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(curl:*)"
     ]
   }
 }

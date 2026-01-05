@@ -21,6 +21,7 @@ import {
   deleteComment,
 } from "@/lib/api/comments";
 import { ShareToChatModal } from "@/components/ShareToChatModal";
+import { getCommunityById } from "@/lib/constants/communities";
 
 interface Post {
   id: number;
@@ -62,18 +63,7 @@ export default function PostDetailPage() {
 
   const getCommunityName = (communityId?: number) => {
     if (!communityId) return null;
-    const communities: { [key: number]: string } = {
-      1: "풀스택",
-      2: "프론트엔드",
-      3: "백엔드",
-      4: "생성형 AI",
-      5: "사이버 보안",
-      6: "클라우드 인프라",
-      7: "클라우드 네이티브",
-      8: "프로덕트 디자인",
-      9: "프로덕트 매니지먼트",
-    };
-    return communities[communityId] || `커뮤니티 ${communityId}`;
+    return getCommunityById(communityId)?.name || `커뮤니티 ${communityId}`;
   };
 
   // 게시글 상세 조회

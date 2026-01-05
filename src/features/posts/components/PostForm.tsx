@@ -15,19 +15,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Loader2, X, ImageIcon } from "lucide-react";
-import { useAuth } from "@/features/auth/AuthContext"; 
-
-const communities = [
-  { id: 1, name: "풀스택" },
-  { id: 2, name: "프론트엔드" },
-  { id: 3, name: "백엔드" },
-  { id: 4, name: "생성형 AI" },
-  { id: 5, name: "사이버 보안" },
-  { id: 6, name: "클라우드 인프라" },
-  { id: 7, name: "클라우드 네이티브" },
-  { id: 8, name: "프로덕트 디자인" },
-  { id: 9, name: "프로덕트 매니지먼트" },
-];
+import { useAuth } from "@/features/auth/AuthContext";
+import { COMMUNITIES } from "@/lib/constants/communities";
 
 function PostFormContent() {
   const router = useRouter();
@@ -233,7 +222,7 @@ function PostFormContent() {
                   <SelectValue placeholder="게시판을 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
-                  {communities.map((c) => (
+                  {COMMUNITIES.map((c) => (
                     <SelectItem key={c.id} value={String(c.id)}>
                       {c.name}
                     </SelectItem>
