@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Users, ArrowRight, Send } from "lucide-react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { jwtDecode } from "jwt-decode";
+import { useAuth } from "@/features/auth/AuthContext";
 import {
   getChatHistory,
   joinChatRoom,
@@ -27,6 +29,7 @@ interface ChatMessage {
   senderId: number;
   senderName: string;
   senderEmail: string;
+  senderProfileImage?: string;
   content: string;
   chattingRoomId: number;
   createdAt?: string;
@@ -57,6 +60,7 @@ export default function CommunityChatRoom({
 }: CommunityChatRoomProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth(); // AuthContext에서 사용자 정보 가져오기
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -217,13 +221,10 @@ export default function CommunityChatRoom({
         const now = Date.now();
 
         if (lastShared && now - parseInt(lastShared) < 10 * 60 * 1000) {
-          console.log("중복 공유 방지: 최근에 이미 공유된 게시글입니다.");
           return;
         }
 
         const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
-
-        console.log("백그라운드 공유 메시지 전송:", shareMessage);
 
         setTimeout(() => {
           try {
@@ -234,10 +235,9 @@ export default function CommunityChatRoom({
               }),
             });
 
-            console.log("✅ 백그라운드 메시지 전송 완료");
             localStorage.setItem(shareKey, now.toString());
           } catch (error) {
-            console.error("❌ 백그라운드 메시지 전송 실패:", error);
+            console.error("메시지 전송 실패:", error);
           }
         }, 100);
       }
@@ -263,14 +263,22 @@ export default function CommunityChatRoom({
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
-      debug: (str) => console.log("[STOMP]", str),
       onConnect: () => {
-        console.log("✅ STOMP 연결 성공");
 
         client.subscribe(`/sub/chat/${communityId}`, (message) => {
-          console.log("클라이언트 sub");
-          console.log(message.body);
-          const body: ChatMessage = JSON.parse(message.body);
+          const rawBody = JSON.parse(message.body);
+
+          // 백엔드 응답의 userProfileImg를 senderProfileImage로 변환
+          const body: ChatMessage = {
+            senderId: rawBody.senderId,
+            senderName: rawBody.senderName,
+            senderEmail: rawBody.senderEmail,
+            senderProfileImage: rawBody.userProfileImg || rawBody.senderProfileImage,
+            content: rawBody.content,
+            chattingRoomId: rawBody.chattingRoomId,
+            createdAt: rawBody.createdAt,
+          };
+
           setMessages((prev) => {
             const newMessages = [...prev, body];
             return newMessages.slice(-50);
@@ -293,8 +301,6 @@ export default function CommunityChatRoom({
               if (!lastShared || now - parseInt(lastShared) >= 10 * 60 * 1000) {
                 const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
 
-                console.log("pending 공유 메시지 전송:", shareMessage);
-
                 setTimeout(() => {
                   try {
                     client.publish({
@@ -304,11 +310,10 @@ export default function CommunityChatRoom({
                       }),
                     });
 
-                    console.log("✅ pending 메시지 전송 완료");
                     localStorage.setItem(shareKey, now.toString());
                     localStorage.removeItem("pendingChatShare");
                   } catch (error) {
-                    console.error("❌ pending 메시지 전송 실패:", error);
+                    console.error("메시지 전송 실패:", error);
                   }
                 }, 500);
               } else {
@@ -337,7 +342,6 @@ export default function CommunityChatRoom({
   // 메시지 전송
   const sendMessage = () => {
     if (!stompClient || !input.trim()) return;
-    console.log("pub 전송: " + input);
 
     stompClient.publish({
       destination: `/pub/chat/${communityId}`,
@@ -358,7 +362,6 @@ export default function CommunityChatRoom({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-      console.log("엔터");
       sendMessage();
     }
   };
@@ -423,6 +426,20 @@ export default function CommunityChatRoom({
               <div className="space-y-3 text-sm">
                 {messages.map((msg, idx) => {
                   const isMine = msg.senderId === myUserId;
+
+                  // 프로필 이미지 URL 결정
+                  let profileImageUrl: string | null = null;
+
+                  if (isMine && user?.profileImage) {
+                    // 내 메시지인 경우: AuthContext의 프로필 이미지 사용
+                    profileImageUrl = user.profileImage !== 'default.png' ? user.profileImage : null;
+                  } else if (msg.senderProfileImage && msg.senderProfileImage !== 'default.png') {
+                    // 다른 사람 메시지인 경우: 백엔드에서 온 프로필 이미지 사용
+                    profileImageUrl = msg.senderProfileImage.startsWith('http')
+                      ? msg.senderProfileImage
+                      : `${process.env.NEXT_PUBLIC_API_URL}${msg.senderProfileImage}`;
+                  }
+
                   return (
                     <div
                       key={idx}
@@ -431,7 +448,14 @@ export default function CommunityChatRoom({
                       }`}
                     >
                       {!isMine && (
-                        <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
+                        <Avatar className="w-8 h-8 shrink-0">
+                          {profileImageUrl && (
+                            <AvatarImage src={profileImageUrl} alt={msg.senderName} />
+                          )}
+                          <AvatarFallback className="bg-slate-200 text-slate-600 text-xs">
+                            {msg.senderName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
                       )}
 
                       <div
@@ -455,7 +479,14 @@ export default function CommunityChatRoom({
                       </div>
 
                       {isMine && (
-                        <div className="w-8 h-8 rounded-full bg-slate-900 shrink-0" />
+                        <Avatar className="w-8 h-8 shrink-0">
+                          {profileImageUrl && (
+                            <AvatarImage src={profileImageUrl} alt={msg.senderName} />
+                          )}
+                          <AvatarFallback className="bg-slate-900 text-white text-xs">
+                            {msg.senderName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
                       )}
                     </div>
                   );

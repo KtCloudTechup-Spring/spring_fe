@@ -88,7 +88,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       processedUser.profileImage = imgPath;
-      console.log("이미지 경로 수정됨:", processedUser.profileImage);
     }
 
     // 3. 상태 및 스토리지 업데이트

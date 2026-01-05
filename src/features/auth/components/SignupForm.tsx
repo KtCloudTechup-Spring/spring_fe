@@ -13,19 +13,7 @@ import { UserPlus, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useSignupForm } from "@/hooks/useSignupForm";
 import { FormField } from "@/components/ui/FormField";
-import type { Community } from "@/types/auth";
-
-const communities: Community[] = [
-  { id: 1, name: "풀스택" },
-  { id: 2, name: "프론트엔드" },
-  { id: 3, name: "백엔드" },
-  { id: 4, name: "생성형 AI" },
-  { id: 5, name: "사이버 보안" },
-  { id: 6, name: "클라우드 인프라" },
-  { id: 7, name: "클라우드 네이티브" },
-  { id: 8, name: "프로덕트 디자인" },
-  { id: 9, name: "프로덕트 매니지먼트" },
-];
+import { COMMUNITIES } from "@/lib/constants/communities";
 
 export default function SignupForm() {
   const {
@@ -118,7 +106,7 @@ export default function SignupForm() {
               }`}
             >
               <div className="grid grid-cols-3 gap-x-2 gap-y-4">
-                {communities.map((c) => (
+                {COMMUNITIES.map((c) => (
                   <label
                     key={c.id}
                     className="flex items-center space-x-2 cursor-pointer hover:opacity-80"
