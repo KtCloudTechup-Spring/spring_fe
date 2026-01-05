@@ -16,7 +16,12 @@ import { Users, ArrowRight, Send } from "lucide-react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { jwtDecode } from "jwt-decode";
-import { getChatHistory, joinChatRoom, leaveChatRoom, getChatParticipants } from "@/lib/api/chat";
+import {
+  getChatHistory,
+  joinChatRoom,
+  leaveChatRoom,
+  getChatParticipants,
+} from "@/lib/api/chat";
 
 interface ChatMessage {
   senderId: number;
@@ -111,12 +116,14 @@ export default function CommunityChatRoom({
       stompClient?.deactivate();
       setIsChatOpen(false);
 
-      window.dispatchEvent(new CustomEvent('chatRoomLeft', {
-        detail: { communityId }
-      }));
+      window.dispatchEvent(
+        new CustomEvent("chatRoomLeft", {
+          detail: { communityId },
+        })
+      );
 
-      const openChat = searchParams.get('openChat');
-      if (openChat === 'true') {
+      const openChat = searchParams.get("openChat");
+      if (openChat === "true") {
         router.back();
       }
     } catch (error) {
@@ -181,9 +188,9 @@ export default function CommunityChatRoom({
 
   // URL 쿼리 파라미터로 채팅방 자동 열기
   useEffect(() => {
-    const openChat = searchParams.get('openChat');
+    const openChat = searchParams.get("openChat");
 
-    if (openChat === 'true' && !isChatOpen && !hasAutoJoined.current) {
+    if (openChat === "true" && !isChatOpen && !hasAutoJoined.current) {
       hasAutoJoined.current = true;
       handleEnterChat();
     }
@@ -193,21 +200,30 @@ export default function CommunityChatRoom({
   useEffect(() => {
     const handleChatShareRequest = (event: Event) => {
       const customEvent = event as CustomEvent;
-      const { postId, postTitle, communityId: targetCommunityId } = customEvent.detail;
+      const {
+        postId,
+        postTitle,
+        communityId: targetCommunityId,
+      } = customEvent.detail;
 
-      if (targetCommunityId === communityId && isChatOpen && stompClient && stompClient.connected) {
+      if (
+        targetCommunityId === communityId &&
+        isChatOpen &&
+        stompClient &&
+        stompClient.connected
+      ) {
         const shareKey = `shared_${postId}_${communityId}`;
         const lastShared = localStorage.getItem(shareKey);
         const now = Date.now();
 
         if (lastShared && now - parseInt(lastShared) < 10 * 60 * 1000) {
-          console.log('중복 공유 방지: 최근에 이미 공유된 게시글입니다.');
+          console.log("중복 공유 방지: 최근에 이미 공유된 게시글입니다.");
           return;
         }
 
         const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
 
-        console.log('백그라운드 공유 메시지 전송:', shareMessage);
+        console.log("백그라운드 공유 메시지 전송:", shareMessage);
 
         setTimeout(() => {
           try {
@@ -218,19 +234,19 @@ export default function CommunityChatRoom({
               }),
             });
 
-            console.log('✅ 백그라운드 메시지 전송 완료');
+            console.log("✅ 백그라운드 메시지 전송 완료");
             localStorage.setItem(shareKey, now.toString());
           } catch (error) {
-            console.error('❌ 백그라운드 메시지 전송 실패:', error);
+            console.error("❌ 백그라운드 메시지 전송 실패:", error);
           }
         }, 100);
       }
     };
 
-    window.addEventListener('chatShareRequest', handleChatShareRequest);
+    window.addEventListener("chatShareRequest", handleChatShareRequest);
 
     return () => {
-      window.removeEventListener('chatShareRequest', handleChatShareRequest);
+      window.removeEventListener("chatShareRequest", handleChatShareRequest);
     };
   }, [communityId, isChatOpen, stompClient]);
 
@@ -242,7 +258,8 @@ export default function CommunityChatRoom({
     if (!token) return;
 
     const client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws-stomp"),
+      webSocketFactory: () =>
+        new SockJS(`${process.env.NEXT_PUBLIC_API_URL}/ws-stomp`),
       connectHeaders: {
         Authorization: `Bearer ${token}`,
       },
@@ -261,7 +278,7 @@ export default function CommunityChatRoom({
         });
 
         // pending share 처리
-        const pendingShare = localStorage.getItem('pendingChatShare');
+        const pendingShare = localStorage.getItem("pendingChatShare");
         if (pendingShare) {
           try {
             const shareRequest = JSON.parse(pendingShare);
@@ -276,7 +293,7 @@ export default function CommunityChatRoom({
               if (!lastShared || now - parseInt(lastShared) >= 10 * 60 * 1000) {
                 const shareMessage = `📢 함께 이야기 나눠봐요!\n\n"${postTitle}"\n\n${window.location.origin}/community/${postId}`;
 
-                console.log('pending 공유 메시지 전송:', shareMessage);
+                console.log("pending 공유 메시지 전송:", shareMessage);
 
                 setTimeout(() => {
                   try {
@@ -287,20 +304,20 @@ export default function CommunityChatRoom({
                       }),
                     });
 
-                    console.log('✅ pending 메시지 전송 완료');
+                    console.log("✅ pending 메시지 전송 완료");
                     localStorage.setItem(shareKey, now.toString());
-                    localStorage.removeItem('pendingChatShare');
+                    localStorage.removeItem("pendingChatShare");
                   } catch (error) {
-                    console.error('❌ pending 메시지 전송 실패:', error);
+                    console.error("❌ pending 메시지 전송 실패:", error);
                   }
                 }, 500);
               } else {
-                localStorage.removeItem('pendingChatShare');
+                localStorage.removeItem("pendingChatShare");
               }
             }
           } catch (error) {
-            console.error('pendingChatShare 파싱 실패:', error);
-            localStorage.removeItem('pendingChatShare');
+            console.error("pendingChatShare 파싱 실패:", error);
+            localStorage.removeItem("pendingChatShare");
           }
         }
       },
@@ -417,7 +434,11 @@ export default function CommunityChatRoom({
                         <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
                       )}
 
-                      <div className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}>
+                      <div
+                        className={`flex flex-col ${
+                          isMine ? "items-end" : "items-start"
+                        }`}
+                      >
                         <span className="text-xs text-slate-500 mb-1">
                           {msg.senderName}
                         </span>
