@@ -9,11 +9,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Loader2, AlertCircle } from "lucide-react";
+import { UserPlus, Loader2, AlertCircle, Mail, Check } from "lucide-react";
 import Link from "next/link";
 import { useSignupForm } from "@/hooks/useSignupForm";
 import { FormField } from "@/components/ui/FormField";
 import { COMMUNITIES } from "@/lib/constants/communities";
+import { Input } from "@/components/ui/input";
 
 export default function SignupForm() {
   const {
@@ -22,6 +23,13 @@ export default function SignupForm() {
     isLoading,
     handleChange,
     handleSubmit,
+    sendVerificationCode,
+    verifyCode,
+    isVerificationSent,
+    isVerified,
+    isSendingCode,
+    isVerifying,
+    countdown,
   } = useSignupForm();
 
   return (
@@ -45,17 +53,115 @@ export default function SignupForm() {
           )}
 
           {/* 1. 이메일 */}
-          <FormField
-            label="이메일"
-            name="email"
-            type="email"
-            placeholder="example@email.com"
-            value={formData.email}
-            onChange={handleChange}
-            error={errors.email}
-            required
-            disabled={isLoading}
-          />
+          <div className="space-y-2">
+            <Label className="text-base">
+              이메일 <span className="text-red-500">*</span>
+            </Label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isLoading || isVerificationSent}
+                  className={errors.email ? "border-red-500" : ""}
+                />
+              </div>
+              <Button
+                type="button"
+                onClick={sendVerificationCode}
+                disabled={
+                  !formData.email ||
+                  isLoading ||
+                  isVerificationSent ||
+                  isSendingCode ||
+                  isVerified
+                }
+                className="whitespace-nowrap bg-slate-900 hover:bg-slate-800"
+              >
+                {isSendingCode ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    발송 중
+                  </>
+                ) : isVerified ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1" />
+                    인증완료
+                  </>
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-1" />
+                    인증번호 받기
+                  </>
+                )}
+              </Button>
+            </div>
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email}</p>
+            )}
+            {isVerificationSent && countdown.isActive && !isVerified && (
+              <p className="text-sm text-slate-600">
+                남은 시간: {countdown.formatTime(countdown.seconds)}
+              </p>
+            )}
+          </div>
+
+          {/* 1-1. 인증번호 입력 */}
+          {isVerificationSent && !isVerified && (
+            <div className="space-y-2">
+              <Label className="text-base">
+                인증번호 <span className="text-red-500">*</span>
+              </Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    name="verificationCode"
+                    type="text"
+                    placeholder="인증번호 6자리"
+                    value={formData.verificationCode}
+                    onChange={handleChange}
+                    disabled={isLoading || isVerified}
+                    className={errors.verificationCode ? "border-red-500" : ""}
+                    maxLength={6}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={verifyCode}
+                  disabled={
+                    !formData.verificationCode ||
+                    isLoading ||
+                    isVerifying ||
+                    isVerified ||
+                    countdown.seconds === 0
+                  }
+                  className="whitespace-nowrap bg-slate-900 hover:bg-slate-800"
+                >
+                  {isVerifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      확인 중
+                    </>
+                  ) : (
+                    "인증하기"
+                  )}
+                </Button>
+              </div>
+              {errors.verificationCode && (
+                <p className="text-sm text-red-500">
+                  {errors.verificationCode}
+                </p>
+              )}
+              {countdown.seconds === 0 && (
+                <p className="text-sm text-red-500">
+                  인증 시간이 만료되었습니다. 다시 시도해주세요.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* 2. 비밀번호 */}
           <FormField
