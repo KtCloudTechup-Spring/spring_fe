@@ -5,6 +5,7 @@ export interface SignupFormData {
   name: string;
   communityId: string;
   agreed: boolean;
+  verificationCode: string;
 }
 
 export interface LoginFormData {
@@ -25,6 +26,7 @@ export interface SignupErrors {
   name?: string;
   communityId?: string;
   agreed?: string;
+  verificationCode?: string;
   form?: string;
 }
 
@@ -68,4 +70,22 @@ export interface Community {
 export interface ApiErrorResponse {
   code: string; // "EMAIL_DUPLICATED" | "INVALID_PARAM" 등
   message: string;
+}
+
+// 이메일 인증 요청/응답 타입
+export interface EmailVerificationRequest {
+  email: string;
+}
+
+export interface EmailVerificationResponse {
+  message?: string;
+}
+
+export interface VerifyCodeRequest {
+  email: string;
+  code: string;
+}
+
+export interface VerifyCodeResponse {
+  message?: string;
 }

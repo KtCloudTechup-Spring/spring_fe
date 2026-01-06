@@ -1,11 +1,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, apiPost } from "@/lib/api";
+import { useCountdown } from "./useCountdown";
 import type {
   SignupFormData,
   SignupErrors,
   SignupRequest,
   SignupResponse,
+  EmailVerificationRequest,
+  EmailVerificationResponse,
+  VerifyCodeRequest,
+  VerifyCodeResponse,
 } from "@/types/auth";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,8 +25,95 @@ export function useSignupForm() {
     name: "",
     communityId: "",
     agreed: false,
+    verificationCode: "",
   });
   const [errors, setErrors] = useState<SignupErrors>({});
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const countdown = useCountdown(300);
+
+  // 이메일 인증번호 발송
+  const sendVerificationCode = async () => {
+    // 이메일 형식 검증
+    if (!formData.email) {
+      setErrors((prev) => ({ ...prev, email: "이메일을 입력해주세요." }));
+      return;
+    }
+    if (!EMAIL_REGEX.test(formData.email)) {
+      setErrors((prev) => ({
+        ...prev,
+        email: "올바른 이메일 형식이 아닙니다.",
+      }));
+      return;
+    }
+
+    setIsSendingCode(true);
+    setErrors((prev) => ({ ...prev, email: undefined }));
+
+    try {
+      const requestData: EmailVerificationRequest = {
+        email: formData.email,
+      };
+
+      await apiPost<EmailVerificationResponse>("/api/auth/email", requestData);
+
+      setIsVerificationSent(true);
+      countdown.start();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrors((prev) => ({ ...prev, email: error.message }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          email: "인증번호 발송에 실패했습니다.",
+        }));
+      }
+    } finally {
+      setIsSendingCode(false);
+    }
+  };
+
+  // 인증번호 검증
+  const verifyCode = async () => {
+    if (!formData.verificationCode.trim()) {
+      setErrors((prev) => ({
+        ...prev,
+        verificationCode: "인증번호를 입력해주세요.",
+      }));
+      return;
+    }
+
+    setIsVerifying(true);
+    setErrors((prev) => ({ ...prev, verificationCode: undefined }));
+
+    try {
+      const requestData: VerifyCodeRequest = {
+        email: formData.email,
+        code: formData.verificationCode,
+      };
+
+      await apiPost<VerifyCodeResponse>("/api/auth/verify", requestData);
+
+      setIsVerified(true);
+      countdown.reset();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrors((prev) => ({
+          ...prev,
+          verificationCode: error.message,
+        }));
+      } else {
+        setErrors((prev) => ({
+          ...prev,
+          verificationCode: "인증번호 확인에 실패했습니다.",
+        }));
+      }
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: SignupErrors = {};
@@ -31,6 +123,11 @@ export function useSignupForm() {
       newErrors.email = "이메일을 입력해주세요.";
     } else if (!EMAIL_REGEX.test(formData.email)) {
       newErrors.email = "올바른 이메일 형식이 아닙니다.";
+    }
+
+    // 이메일 인증 검증
+    if (!isVerified) {
+      newErrors.verificationCode = "이메일 인증을 완료해주세요.";
     }
 
     // 비밀번호 검증
@@ -130,5 +227,12 @@ export function useSignupForm() {
     isLoading,
     handleChange,
     handleSubmit,
+    sendVerificationCode,
+    verifyCode,
+    isVerificationSent,
+    isVerified,
+    isSendingCode,
+    isVerifying,
+    countdown,
   };
 }
