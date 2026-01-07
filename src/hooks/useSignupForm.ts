@@ -7,9 +7,9 @@ import type {
   SignupErrors,
   SignupRequest,
   SignupResponse,
-  EmailVerificationRequest,
+  // EmailVerificationRequest, // Removed as it's no longer used
   EmailVerificationResponse,
-  VerifyCodeRequest,
+  // VerifyCodeRequest, // Removed as it's no longer used (using query params)
   VerifyCodeResponse,
 } from "@/types/auth";
 
@@ -53,18 +53,26 @@ export function useSignupForm() {
     setErrors((prev) => ({ ...prev, email: undefined }));
 
     try {
-      const requestData: EmailVerificationRequest = {
-        email: formData.email,
-      };
+      // Removed requestData object
+      // const requestData: EmailVerificationRequest = {
+      //   email: formData.email,
+      // };
 
-      await apiPost<EmailVerificationResponse>("/api/auth/email", requestData);
+      // Modified apiPost call to use query parameters
+      console.log('[DEBUG] Sending email verification request to:', `/api/auth/email?email=${encodeURIComponent(formData.email)}`);
+      const response = await apiPost<EmailVerificationResponse>(`/api/auth/email?email=${encodeURIComponent(formData.email)}`);
+      console.log('[DEBUG] Email verification response:', response);
 
       setIsVerificationSent(true);
       countdown.start();
+      console.log('[DEBUG] Verification sent state updated successfully');
     } catch (error) {
+      console.error('[DEBUG] Email verification error:', error);
       if (error instanceof ApiError) {
+        console.error('[DEBUG] ApiError details - code:', error.code, 'message:', error.message, 'status:', error.status);
         setErrors((prev) => ({ ...prev, email: error.message }));
       } else {
+        console.error('[DEBUG] Unknown error type:', error);
         setErrors((prev) => ({
           ...prev,
           email: "인증번호 발송에 실패했습니다.",
@@ -89,22 +97,26 @@ export function useSignupForm() {
     setErrors((prev) => ({ ...prev, verificationCode: undefined }));
 
     try {
-      const requestData: VerifyCodeRequest = {
-        email: formData.email,
-        code: formData.verificationCode,
-      };
+      // Modified to use query parameters instead of JSON body
+      const endpoint = `/api/auth/verify?email=${encodeURIComponent(formData.email)}&code=${encodeURIComponent(formData.verificationCode)}`;
 
-      await apiPost<VerifyCodeResponse>("/api/auth/verify", requestData);
+      console.log('[DEBUG] Verifying code with endpoint:', endpoint);
+      const response = await apiPost<VerifyCodeResponse>(endpoint);
+      console.log('[DEBUG] Verification response:', response);
 
       setIsVerified(true);
       countdown.reset();
+      console.log('[DEBUG] Verification successful');
     } catch (error) {
+      console.error('[DEBUG] Verification error:', error);
       if (error instanceof ApiError) {
+        console.error('[DEBUG] ApiError details - code:', error.code, 'message:', error.message, 'status:', error.status);
         setErrors((prev) => ({
           ...prev,
           verificationCode: error.message,
         }));
       } else {
+        console.error('[DEBUG] Unknown error type:', error);
         setErrors((prev) => ({
           ...prev,
           verificationCode: "인증번호 확인에 실패했습니다.",
