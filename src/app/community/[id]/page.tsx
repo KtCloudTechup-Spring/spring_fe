@@ -13,7 +13,8 @@ import {
   Heart
 } from "lucide-react";
 import Link from "next/link";
-import { getPostById, toggleFavorite } from "@/lib/api/posts";
+import { useRouter } from "next/navigation";
+import { getPostById, toggleFavorite, deletePost } from "@/lib/api/posts";
 import {
   getComments,
   createComment,
@@ -51,6 +52,7 @@ interface Comment {
 export default function PostDetailPage() {
   const params = useParams();
   const postId = params.id;
+  const router = useRouter();
 
   const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -60,6 +62,7 @@ export default function PostDetailPage() {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editContent, setEditContent] = useState("");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isPostAuthor, setIsPostAuthor] = useState(false);
 
   const getCommunityName = (communityId?: number) => {
     if (!communityId) return null;
@@ -94,6 +97,11 @@ export default function PostDetailPage() {
 
         setPost(mappedPost);
         setIsLiked(response.data.favorited);
+
+        // 작성자 확인
+        const currentUserStr = localStorage.getItem("user");
+        const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+        setIsPostAuthor(currentUser?.name === response.data.authorName);
       } catch (error) {
         console.error("게시글 조회 실패:", error);
       } finally {
@@ -244,6 +252,38 @@ export default function PostDetailPage() {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (comments.length > 0) {
+      if (!confirm(`이 게시글에는 ${comments.length}개의 댓글이 있습니다.\n댓글이 있는 게시글은 삭제할 수 없습니다.\n먼저 모든 댓글을 삭제해주세요.`)) {
+        return;
+      }
+      alert("먼저 모든 댓글을 삭제해주세요.");
+      return;
+    }
+
+    if (!confirm("게시글을 삭제하시겠습니까?")) return;
+
+    try {
+      console.log("삭제할 postId:", postId);
+      if (!postId) {
+        alert("게시글 ID를 찾을 수 없습니다.");
+        return;
+      }
+      await deletePost(postId as string);
+      alert("게시글이 삭제되었습니다.");
+      router.push("/community");
+    } catch (error: any) {
+      console.error("게시글 삭제 실패:", error);
+
+      // 외래 키 제약 조건 에러 처리
+      if (error.message.includes("500") || error.message.includes("constraint")) {
+        alert("게시글을 삭제할 수 없습니다.\n댓글이 있는 게시글은 먼저 모든 댓글을 삭제해야 합니다.");
+      } else {
+        alert(`게시글 삭제에 실패했습니다: ${error.message}`);
+      }
+    }
+  };
+
   // -----------------------------------------------------
 
   if (isLoading) {
@@ -300,11 +340,34 @@ export default function PostDetailPage() {
                 <div className="text-[11px] text-slate-500">{post.date}</div>
               </div>
             </div>
-            {post.communityId && (
-              <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full whitespace-nowrap">
-                {getCommunityName(post.communityId)}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {isPostAuthor && (
+                <div className="flex gap-2">
+                  <Link href={`/post/edit/${postId}`}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs text-slate-500 hover:text-slate-900"
+                    >
+                      수정
+                    </Button>
+                  </Link>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleDeletePost}
+                    className="text-xs text-red-500 hover:text-red-700"
+                  >
+                    삭제
+                  </Button>
+                </div>
+              )}
+              {post.communityId && (
+                <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full whitespace-nowrap">
+                  {getCommunityName(post.communityId)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
