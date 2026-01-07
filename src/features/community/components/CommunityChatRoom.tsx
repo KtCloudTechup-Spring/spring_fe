@@ -253,7 +253,11 @@ export default function CommunityChatRoom({
   // STOMP 연결
   useEffect(() => {
     if (!isChatOpen) return;
-
+    setTimeout(() => {
+      const el = chatScrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 0);
+    
     const token = localStorage.getItem("accessToken");
     if (!token) return;
 
