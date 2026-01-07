@@ -56,7 +56,15 @@ export async function apiFetch<T>(
     return {} as T;
   }
 
-  return response.json();
+  // JSON 응답 파싱 시도
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  // JSON이 아닌 경우 텍스트로 읽어서 객체로 변환
+  const text = await response.text();
+  return { message: text } as T;
 }
 
 export function apiGet<T>(endpoint: string, options?: RequestInit) {
